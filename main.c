@@ -17,17 +17,10 @@
 #include <stdlib.h>
 #include <string.h>
 #include <syslog.h>
-#include <netinet/in.h>
-#include <arpa/inet.h>
 #include "main.h"
 
 /* main list of interfaces */
 static struct ping_intf intf[MAX_NUM_INTERFACES];
-
-/* config items (with default values) */
-static int conf_ping_interval = 10; /* sec */
-static int conf_offline_timeout = 30; /* sec */
-static int conf_ping_host = 0x08080808; /* IP 8.8.8.8 */
 
 void state_change(enum online_state state_new, struct ping_intf* pi)
 {
@@ -115,48 +108,19 @@ struct ping_intf* get_interface(const char* interface)
 	return pi;
 }
 
-static void get_uci_options(void)
-{
-	int ret;
-
-	uci_init();
-
-	ret = uci_get_option_int("pingcheck.@main[0].interval");
-	if (ret > 0)
-		conf_ping_interval = ret;
-
-	ret = uci_get_option_int("pingcheck.@main[0].timeout");
-	if (ret > 0)
-		conf_offline_timeout = ret;
-
-	char hostname[200];
-	struct in_addr inaddr;
-	ret = uci_get_option("pingcheck.@main[0].host", hostname, sizeof(hostname));
-	if (ret) {
-		inet_aton(hostname, &inaddr);
-		conf_ping_host = inaddr.s_addr;
-	}
-
-	printf("Interval: %d\n", conf_ping_interval);
-	printf("Timeout: %d\n", conf_offline_timeout);
-	printf("Host: %s (%x)\n", inet_ntoa(inaddr), inaddr.s_addr);
-
-	uci_get_pingcheck_interfaces(intf, MAX_NUM_INTERFACES);
-
-	uci_finish();
-}
-
 int main(__attribute__((unused)) int argc, __attribute__((unused)) char** argv)
 {
 	int ret;
 
-	openlog("pingcheck", LOG_PID|LOG_CONS, LOG_DAEMON);
-
-	get_uci_options();
-
 	ret = uloop_init();
 	if (ret < 0)
 		return EXIT_FAILURE;
+
+	openlog("pingcheck", LOG_PID|LOG_CONS, LOG_DAEMON);
+
+	ret = uci_config_pingcheck(intf, MAX_NUM_INTERFACES);
+	if (!ret)
+		goto exit;
 
 	scripts_init();
 
@@ -173,10 +137,6 @@ int main(__attribute__((unused)) int argc, __attribute__((unused)) char** argv)
 
 	/* start ping on all available interfaces */
 	for (int i=0; i < MAX_NUM_INTERFACES && intf[i].name[0]; i++) {
-		// TODO: make config per interface
-		intf[i].conf_interval = conf_ping_interval;
-		intf[i].conf_timeout = conf_offline_timeout;
-		intf[i].conf_host = conf_ping_host;
 		ping_init(&intf[i]);
 	}
 

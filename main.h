@@ -73,11 +73,7 @@ int ubus_register_server(void);
 void ubus_finish(void);
 
 // uci.c
-int uci_init(void);
-int uci_get_option(const char* nameIn, char* value, size_t valLen);
-int uci_get_option_int(const char* nameIn);
-void uci_get_pingcheck_interfaces(struct ping_intf* intf, int len);
-void uci_finish(void);
+int uci_config_pingcheck(struct ping_intf* intf, int len);
 
 // scripts.c
 void scripts_init(void);
