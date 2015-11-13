@@ -1,7 +1,7 @@
 # pingcheck
 Check connectivity of interfaces in OpenWRT
 
-Checks with "ping" (ICMP echo request/reply) wether a configured host (normally on the internet) can be reached via a specific interface. Then makes this information available via `ubus` and triggers "online" and "offline" scripts. It's like hotplug for internet connectivity.
+Checks with "ping" (ICMP echo request/reply) wether a configured host (normally on the Internet) can be reached via a specific network interface. Then makes this information available via `ubus` and triggers "online" and "offline" scripts. It's like hotplug for internet connectivity and especially useful if your router could be connected via multiple interfaces at the same time.
 
 Here is an example config:
 
@@ -43,7 +43,7 @@ root@OpenWrt:~# ubus call pingcheck status
 }
 ```
 
-And detailled interface status is also available:
+Detailled interface status is also available:
 
 ```
 root@OpenWrt:~# ubus call pingcheck status "{'interface':'sta'}"
