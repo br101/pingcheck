@@ -53,15 +53,16 @@ static void ubus_receive_interface_event(
 	}
 }
 
-int ubus_listen_network_events(void)
+bool ubus_listen_network_events(void)
 {
 	/* ubus event listener */
 	memset(&interface_event_handler, 0, sizeof(interface_event_handler));
 	interface_event_handler.cb = ubus_receive_interface_event;
 	ubus_register_event_handler(ctx, &interface_event_handler, "network.interface");
+	//TODO: error checking
 
 	ubus_add_uloop(ctx);
-	return 1;
+	return true;
 }
 
 
@@ -85,7 +86,7 @@ static void ubus_result_cb(__attribute__((unused)) struct ubus_request *req,
 
 /*** network interface status ***/
 
-static int ubus_interface_status(const char* name)
+static bool ubus_interface_status(const char* name)
 {
 	uint32_t id;
 	int ret;
@@ -93,18 +94,18 @@ static int ubus_interface_status(const char* name)
 
 	ret = snprintf(idstr, sizeof(idstr), "network.interface.%s", name);
 	if (ret <= 0 || (unsigned int)ret >= sizeof(idstr)) // error or truncated
-		return 0;
+		return false;
 
 	ret = ubus_lookup_id(ctx, idstr, &id);
 	if (ret)
-		return 0;
+		return false;
 
 	ret = ubus_invoke(ctx, id, "status", NULL, ubus_result_cb, NULL, UBUS_TIMEOUT);
 	if (ret < 0)
-		return 0;
+		return false;
 
 	// client needs to free(last_result_msg);
-	return 1;
+	return true;
 }
 
 enum {
@@ -280,26 +281,26 @@ static struct ubus_object server_object = {
 	.n_methods = ARRAY_SIZE(server_methods),
 };
 
-int ubus_register_server(void) {
+bool ubus_register_server(void) {
 	int ret;
 
 	ret = ubus_add_object(ctx, &server_object);
 	if (ret)
 		printlog(LOG_ERR, "Failed to add server object: %s\n", ubus_strerror(ret));
-	return ret;
+	return ret ? false : true;
 }
 
 
 /*** init / finish ***/
 
-int ubus_init(void)
+bool ubus_init(void)
 {
 	ctx = ubus_connect(NULL);
 	if (!ctx) {
 		printlog(LOG_ERR, "Failed to connect to ubus");
-		return 0;
+		return false;
 	}
-	return 1;
+	return true;
 }
 
 void ubus_finish(void)

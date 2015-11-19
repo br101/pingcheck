@@ -12,6 +12,7 @@
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  * GNU General Public License for more details.
  */
+#include <stdbool.h>
 #include <libubox/uloop.h>
 #include <libubox/runqueue.h>
 
@@ -57,19 +58,19 @@ printlog(int level, const char *format, ...);
 
 // icmp.c
 int icmp_init(const char* ifname);
-int icmp_echo_send(int fd, int dst, int cnt);
-int icmp_echo_receive(int fd);
+bool icmp_echo_send(int fd, int dst, int cnt);
+bool icmp_echo_receive(int fd);
 
 // ping.c
-int ping_init(struct ping_intf* pi);
-int ping_send(struct ping_intf* pi);
+bool ping_init(struct ping_intf* pi);
+bool ping_send(struct ping_intf* pi);
 void ping_stop(struct ping_intf* pi);
 
 // ubus.c
-int ubus_init(void);
-int ubus_listen_network_events(void);
+bool ubus_init(void);
+bool ubus_listen_network_events(void);
 int ubus_interface_get_status(const char* name, char* device, size_t device_len);
-int ubus_register_server(void);
+bool ubus_register_server(void);
 void ubus_finish(void);
 
 // uci.c

@@ -51,28 +51,28 @@ static void uto_ping_send_cb(struct uloop_timeout *t)
 	uloop_timeout_set(t, pi->conf_interval * 1000);
 }
 
-int ping_init(struct ping_intf* pi)
+bool ping_init(struct ping_intf* pi)
 {
 	int ret;
 
 	if (pi->ufd.fd != 0) {
 		printlog(LOG_ERR, "Ping on '%s' already init", pi->name);
-		return 1;
+		return true;
 	}
 
 	ret = ubus_interface_get_status(pi->name, pi->device, MAX_IFNAME_LEN);
 	if (ret < 0) {
 		printlog(LOG_INFO, "Interface '%s' not found or error", pi->name);
 		pi->state = UNKNOWN;
-		return 0;
+		return false;
 	} else if (ret == 0) {
 		printlog(LOG_INFO, "Interface '%s' not up", pi->name);
 		pi->state = DOWN;
-		return 0;
+		return false;
 	} else if (ret == 1) {
 		printlog(LOG_INFO, "Interface '%s' no route", pi->name);
 		pi->state = NO_ROUTE;
-		return 0;
+		return false;
 	} else if (ret == 2) {
 		pi->state = UP;
 	}
@@ -82,7 +82,7 @@ int ping_init(struct ping_intf* pi)
 	/* init icmp socket */
 	ret = icmp_init(pi->device);
 	if (ret < 0)
-		return 0;
+		return false;
 
 	/* add socket handler to uloop */
 	pi->ufd.fd = ret;
@@ -91,7 +91,7 @@ int ping_init(struct ping_intf* pi)
 	if (ret < 0) {
 		printlog(LOG_ERR, "Could not add uloop fd %d for '%s'",
 			 pi->ufd.fd, pi->name);
-		return 0;
+		return false;
 	}
 
 	/* regular sending of ping (start first in 1 sec) */
@@ -100,7 +100,7 @@ int ping_init(struct ping_intf* pi)
 	if (ret < 0) {
 		printlog(LOG_ERR, "Could not add uloop send timeout for '%s'",
 			 pi->name);
-		return 0;
+		return false;
 	}
 
 	/* timeout for offline state, if no reply has been received */
@@ -109,30 +109,28 @@ int ping_init(struct ping_intf* pi)
 	if (ret < 0) {
 		printlog(LOG_ERR, "Could not add uloop offline timeout for '%s'",
 			 pi->name);
-		return 0;
+		return false;
 	}
 
 	/* reset counters */
 	pi->cnt_sent = 0;
 	pi->cnt_succ = 0;
 
-	return 1;
+	return true;
 }
 
-int ping_send(struct ping_intf* pi)
+bool ping_send(struct ping_intf* pi)
 {
 	if (pi->ufd.fd <= 0) {
 		printlog(LOG_ERR, "ping not init on '%s'", pi->name);
 		return 0;
 	}
 
-	int ret = icmp_echo_send(pi->ufd.fd, pi->conf_host, pi->cnt_sent);
-	if (ret) {
-		//printlog(LOG_DEBUG, "Sent ping on '%s'", pi->name);
+	bool ret = icmp_echo_send(pi->ufd.fd, pi->conf_host, pi->cnt_sent);
+	if (ret)
 		pi->cnt_sent++;
-	} else {
+	else
 		printlog(LOG_ERR, "Could not send ping on '%s'", pi->name);
-	}
 	return ret;
 }
 

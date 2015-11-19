@@ -18,7 +18,6 @@
 #include <syslog.h>
 #include <arpa/inet.h>
 #include <uci.h>
-
 #include "main.h"
 
 /** analogous to uci_lookup_option_string from uci.h, returns -1 when not found */

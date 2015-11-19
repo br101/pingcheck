@@ -70,7 +70,7 @@ int icmp_init(const char* ifname)
 	return fd;
 }
 
-int icmp_echo_send(int fd, int dst_ip, int cnt)
+bool icmp_echo_send(int fd, int dst_ip, int cnt)
 {
 	char buf[500];
 	int ret;
@@ -92,12 +92,12 @@ int icmp_echo_send(int fd, int dst_ip, int cnt)
 	ret = sendto(fd, &buf, sizeof(struct icmphdr), 0, (struct sockaddr*)&addr, sizeof(addr));
 	if (ret <= 0) {
 		warn("sendto");
-		return 0;
+		return false;
 	}
-	return 1;
+	return true;
 }
 
-int icmp_echo_receive(int fd)
+bool icmp_echo_receive(int fd)
 {
 	char buf[500];
 	int ret;
@@ -105,7 +105,7 @@ int icmp_echo_receive(int fd)
 	ret = recv(fd, buf, sizeof(buf), 0);
 	if (ret < (int)(sizeof(struct icmphdr) + sizeof(struct iphdr))) {
 		warn("received packet too short");
-		return 0;
+		return false;
 	}
 
 	struct iphdr *ip = (struct iphdr*)buf;
@@ -118,7 +118,7 @@ int icmp_echo_receive(int fd)
 	if (csum_recv == csum_calc &&		// checksum correct
 	    icmp->type == ICMP_ECHOREPLY &&	// correct type
 	    ntohs(icmp->un.echo.id) == pid) {	// we are sender
-		return 1;
+		return true;
 	}
-	return 0;
+	return false;
 }
