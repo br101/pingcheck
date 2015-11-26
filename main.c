@@ -108,19 +108,34 @@ struct ping_intf* get_interface(const char* interface)
 	return pi;
 }
 
+/* reset counters for all (pass NULL) or one interface */
+void reset_counters(const char* interface) {
+	for (int i=0; i < MAX_NUM_INTERFACES && intf[i].name[0]; i++) {
+		if (interface == NULL || strncmp(intf[i].name, interface, MAX_IFNAME_LEN) == 0) {
+			intf[i].cnt_sent = 0;
+			intf[i].cnt_succ = 0;
+			intf[i].state = UNKNOWN;
+		}
+	}
+}
+
 int main(__attribute__((unused)) int argc, __attribute__((unused)) char** argv)
 {
 	int ret;
 
-	ret = uloop_init();
-	if (ret < 0)
-		return EXIT_FAILURE;
-
 	openlog("pingcheck", LOG_PID|LOG_CONS, LOG_DAEMON);
 
+	ret = uloop_init();
+	if (ret < 0) {
+		printlog(LOG_CRIT, "Could not initialize uloop");
+		return EXIT_FAILURE;
+	}
+
 	ret = uci_config_pingcheck(intf, MAX_NUM_INTERFACES);
-	if (!ret)
+	if (!ret) {
+		printlog(LOG_CRIT, "Could not read UCI config");
 		goto exit;
+	}
 
 	scripts_init();
 
@@ -130,8 +145,10 @@ int main(__attribute__((unused)) int argc, __attribute__((unused)) char** argv)
 
 	/* listen for ubus network interface events */
 	ret = ubus_listen_network_events();
-	if (!ret)
+	if (!ret) {
+		printlog(LOG_CRIT, "Could not listen to interface events");
 		goto exit;
+	}
 
 	ubus_register_server();
 

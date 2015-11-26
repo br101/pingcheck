@@ -58,8 +58,9 @@ bool ubus_listen_network_events(void)
 	/* ubus event listener */
 	memset(&interface_event_handler, 0, sizeof(interface_event_handler));
 	interface_event_handler.cb = ubus_receive_interface_event;
-	ubus_register_event_handler(ctx, &interface_event_handler, "network.interface");
-	//TODO: error checking
+	int ret = ubus_register_event_handler(ctx, &interface_event_handler, "network.interface");
+	if (ret < 0)
+		return false;
 
 	ubus_add_uloop(ctx);
 	return true;
@@ -205,12 +206,12 @@ exit:
 /*** server ***/
 
 enum {
-	STATUS_INTF,
-	__STATUS_MAX
+	PINGCHECK_INTF,
+	__PINGCHECK_MAX
 };
 
-static const struct blobmsg_policy status_policy[] = {
-	[STATUS_INTF] = { .name = "interface", .type = BLOBMSG_TYPE_STRING },
+static const struct blobmsg_policy intf_policy[] = {
+	[PINGCHECK_INTF] = { .name = "interface", .type = BLOBMSG_TYPE_STRING },
 };
 
 static struct blob_buf b;
@@ -221,16 +222,16 @@ static int server_status(struct ubus_context *ctx,
 			 __attribute__((unused)) const char *method,
 			 struct blob_attr *msg)
 {
-	struct blob_attr *tb[__STATUS_MAX];
+	struct blob_attr *tb[__PINGCHECK_MAX];
 	const char* intf = NULL;
 
-	blobmsg_parse(status_policy, ARRAY_SIZE(status_policy), tb, blob_data(msg), blob_len(msg));
+	blobmsg_parse(intf_policy, ARRAY_SIZE(intf_policy), tb, blob_data(msg), blob_len(msg));
 
 	blob_buf_init(&b, 0);
 
-	if (tb[STATUS_INTF]) {
+	if (tb[PINGCHECK_INTF]) {
 		/* detailed interface status */
-		intf = blobmsg_get_string(tb[STATUS_INTF]);
+		intf = blobmsg_get_string(tb[PINGCHECK_INTF]);
 		struct ping_intf* pi = get_interface(intf);
 		if (pi == NULL) {
 			return -1;
@@ -266,9 +267,27 @@ static int server_status(struct ubus_context *ctx,
 	return 0;
 }
 
+static int server_reset(__attribute__((unused)) struct ubus_context *ctx,
+			__attribute__((unused)) struct ubus_object *obj,
+			__attribute__((unused)) struct ubus_request_data *req,
+			__attribute__((unused)) const char *method,
+			struct blob_attr *msg)
+{
+	struct blob_attr *tb[__PINGCHECK_MAX];
+	const char* intf = NULL;
+
+	blobmsg_parse(intf_policy, ARRAY_SIZE(intf_policy), tb, blob_data(msg), blob_len(msg));
+
+	if (tb[PINGCHECK_INTF])
+		intf = blobmsg_get_string(tb[PINGCHECK_INTF]);
+
+	reset_counters(intf);
+	return 0;
+}
+
 static const struct ubus_method server_methods[] = {
-	UBUS_METHOD("status", server_status, status_policy),
-	//UBUS_METHOD_NOARG("reset", server_reset),
+	UBUS_METHOD("status", server_status, intf_policy),
+	UBUS_METHOD("reset", server_reset, intf_policy),
 };
 
 static struct ubus_object_type server_object_type =

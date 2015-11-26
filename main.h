@@ -89,3 +89,4 @@ const char* get_global_status_str();
 int get_online_interface_names(const char** dest, int destLen);
 int get_all_interface_names(const char** dest, int destLen);
 void state_change(enum online_state state_new, struct ping_intf* pi);
+void reset_counters(const char* interface);
