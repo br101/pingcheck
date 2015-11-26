@@ -5,7 +5,7 @@ Checks with "ping" (ICMP echo request/reply) wether a configured host (normally 
 
 ## Config options
 
-Section `default` or section `interface`
+### Section `default` or section `interface`
 
 | Name		| Type		| Required	| Default	| Description |
 | ------------- | ------------- | ------------- | ------------- | ----------- |
@@ -15,7 +15,7 @@ Section `default` or section `interface`
 
 All these values can either be defined in defaults, or in the interface, but the are required in one of them. Interface config overrides default.
 
-Section `interface`
+### Section `interface`
 
 | Name		| Type		| Required	| Default	| Description |
 | ------------- | ------------- | ------------- | ------------- | ----------- |
@@ -31,12 +31,16 @@ config default
 
 config interface
         option name wan
+        # default options will be used
 
 config interface
         option name sta
+        option host 192.168.11.1
 
 config interface
         option name umts
+        option interval 5
+        option timeout 60
 
 config interface
         option name bat_cl
@@ -63,7 +67,7 @@ root@OpenWrt:~# ubus call pingcheck status
 }
 ```
 
-Detailled interface status is also available:
+Detailed interface status is also available:
 
 ```
 root@OpenWrt:~# ubus call pingcheck status "{'interface':'sta'}"
@@ -75,6 +79,18 @@ root@OpenWrt:~# ubus call pingcheck status "{'interface':'sta'}"
         "sent": 16,
         "success": 16
 }
+```
+
+You can reset the counters and interface status for all interfaces like this:
+
+```
+root@OpenWrt:~# ubus call pingcheck reset
+```
+
+Or for just one specific interface:
+
+```
+root@OpenWrt:~# ubus call pingcheck reset '{"interface":"wan"}'
 ```
 
 ## Shell Scripts
