@@ -5,17 +5,21 @@ Checks with "ping" (ICMP echo request/reply) wether a configured host (normally 
 
 ## Config options
 
-Section 'default' or section 'interface'
+Section `default` or section `interface`
+
 | Name		| Type		| Required	| Default	| Description |
 | ------------- | ------------- | ------------- | ------------- | ----------- |
-| host		| IP address	| yes		| (none)	| IP Address or hostname of ping destination |
-| interval	| seconds	| yes		| (none)	| Ping will be sent every 'interval' seconds |
-| timeout	| seconds	| yes		| (none)	| After no Ping replies have been received for 'timeout' seconds, the offline scripts will be executed |
+| `host`	| IP address	| yes		| (none)	| IP Address or hostname of ping destination |
+| `interval`	| seconds	| yes		| (none)	| Ping will be sent every 'interval' seconds |
+| `timeout`	| seconds	| yes		| (none)	| After no Ping replies have been received for 'timeout' seconds, the offline scripts will be executed |
 
-All these values can either be defined in defaults, or in the interface.
+All these values can either be defined in defaults, or in the interface, but the are required in one of them. Interface config overrides default.
 
-Section 'interface'
-| name		| interface name | yes		| (none)	| UCI name of interface |
+Section `interface`
+
+| Name		| Type		| Required	| Default	| Description |
+| ------------- | ------------- | ------------- | ------------- | ----------- |
+| `name`	| interface name | yes		| (none)	| UCI name of interface |
 
 Here is an example config:
 
