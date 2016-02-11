@@ -36,6 +36,7 @@ struct ping_intf {
 	enum online_state state;
 	unsigned int cnt_sent;
 	unsigned int cnt_succ;
+	unsigned int last_rtt;	/* in ms */
 
 	/* config items */
 	int conf_interval;
@@ -46,6 +47,7 @@ struct ping_intf {
 	struct uloop_fd ufd;
 	struct uloop_timeout timeout_offline;
 	struct uloop_timeout timeout_send;
+	struct timespec time_sent;
 
 	/* internal state for scripts */
 	struct scripts_proc scripts_on;
@@ -55,6 +57,7 @@ struct ping_intf {
 // utils.c
 void __attribute__ ((format (printf, 2, 3)))
 printlog(int level, const char *format, ...);
+long timespec_diff_ms(struct timespec start, struct timespec end);
 
 // icmp.c
 int icmp_init(const char* ifname);

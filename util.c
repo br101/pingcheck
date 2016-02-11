@@ -15,6 +15,7 @@
 #include <stdio.h>
 #include <stdarg.h>
 #include <syslog.h>
+#include <sys/time.h>
 
 void __attribute__ ((format (printf, 2, 3)))
 printlog(int level, const char *format, ...)
@@ -29,4 +30,10 @@ printlog(int level, const char *format, ...)
 	vprintf(format, args);
 	printf("\n");
 	va_end(args);
+}
+
+long timespec_diff_ms(struct timespec start, struct timespec end)
+{
+	return (end.tv_sec - start.tv_sec) * 1000 +
+		(end.tv_nsec - start.tv_nsec) / 1000000;
 }

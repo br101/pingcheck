@@ -15,6 +15,7 @@
 #include <stdio.h>
 #include <unistd.h>
 #include <syslog.h>
+#include <sys/time.h>
 #include "main.h"
 
 /* uloop callback when received something on a ping socket */
@@ -32,6 +33,12 @@ static void ping_fd_handler(struct uloop_fd *fd,
 	uloop_timeout_set(&pi->timeout_offline, pi->conf_timeout * 1000);
 
 	pi->cnt_succ++;
+
+	/* calculate round trip time */
+	struct timespec time_recv;
+	clock_gettime(CLOCK_MONOTONIC, &time_recv);
+	pi->last_rtt = timespec_diff_ms(pi->time_sent, time_recv);
+
 	state_change(ONLINE, pi);
 }
 
@@ -127,9 +134,10 @@ bool ping_send(struct ping_intf* pi)
 	}
 
 	bool ret = icmp_echo_send(pi->ufd.fd, pi->conf_host, pi->cnt_sent);
-	if (ret)
+	if (ret) {
 		pi->cnt_sent++;
-	else
+		clock_gettime(CLOCK_MONOTONIC, &pi->time_sent);
+	} else
 		printlog(LOG_ERR, "Could not send ping on '%s'", pi->name);
 	return ret;
 }
