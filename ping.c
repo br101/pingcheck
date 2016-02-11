@@ -28,16 +28,16 @@ static void ping_fd_handler(struct uloop_fd *fd,
 		return;
 
 	//printlog(LOG_DEBUG, "Received pong on '%s'", pi->name);
-
-	/* online just confirmed: move timeout for offline to later */
-	uloop_timeout_set(&pi->timeout_offline, pi->conf_timeout * 1000);
-
 	pi->cnt_succ++;
 
 	/* calculate round trip time */
 	struct timespec time_recv;
 	clock_gettime(CLOCK_MONOTONIC, &time_recv);
 	pi->last_rtt = timespec_diff_ms(pi->time_sent, time_recv);
+
+	/* online just confirmed: move timeout for offline to later
+	 * and give the next reply an extra window of two times the last RTT */
+	uloop_timeout_set(&pi->timeout_offline, pi->conf_timeout * 1000 + pi->last_rtt * 2);
 
 	state_change(ONLINE, pi);
 }
@@ -110,9 +110,14 @@ bool ping_init(struct ping_intf* pi)
 		return false;
 	}
 
-	/* timeout for offline state, if no reply has been received */
+	/* timeout for offline state, if no reply has been received
+	 *
+	 * add 900ms to the timeout to give the last reply a chance to arrive
+	 * before the timeout triggers, in case the timout is a multiple of
+	 * interval. this will later be adjusted to the last RTT
+	 */
 	pi->timeout_offline.cb = uto_offline_cb;
-	ret = uloop_timeout_set(&pi->timeout_offline, pi->conf_timeout * 1000);
+	ret = uloop_timeout_set(&pi->timeout_offline, pi->conf_timeout * 1000 + 900);
 	if (ret < 0) {
 		printlog(LOG_ERR, "Could not add uloop offline timeout for '%s'",
 			 pi->name);
