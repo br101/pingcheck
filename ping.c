@@ -127,6 +127,7 @@ bool ping_init(struct ping_intf* pi)
 	/* reset counters */
 	pi->cnt_sent = 0;
 	pi->cnt_succ = 0;
+	pi->last_rtt = 0;
 
 	return true;
 }

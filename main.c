@@ -114,6 +114,7 @@ void reset_counters(const char* interface) {
 		if (interface == NULL || strncmp(intf[i].name, interface, MAX_IFNAME_LEN) == 0) {
 			intf[i].cnt_sent = 0;
 			intf[i].cnt_succ = 0;
+			intf[i].last_rtt = 0;
 			intf[i].state = UNKNOWN;
 		}
 	}
