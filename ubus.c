@@ -243,6 +243,7 @@ static int server_status(struct ubus_context *ctx,
 		blobmsg_add_u32(&b, "sent", pi->cnt_sent);
 		blobmsg_add_u32(&b, "success", pi->cnt_succ);
 		blobmsg_add_u32(&b, "last_rtt", pi->last_rtt);
+		blobmsg_add_u32(&b, "max_rtt", pi->max_rtt);
 	} else {
 		/* global status / summary */
 		int num;

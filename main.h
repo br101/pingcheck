@@ -37,6 +37,7 @@ struct ping_intf {
 	unsigned int cnt_sent;
 	unsigned int cnt_succ;
 	unsigned int last_rtt;	/* in ms */
+	unsigned int max_rtt;	/* in ms */
 
 	/* config items */
 	int conf_interval;

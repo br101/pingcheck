@@ -115,6 +115,7 @@ void reset_counters(const char* interface) {
 			intf[i].cnt_sent = 0;
 			intf[i].cnt_succ = 0;
 			intf[i].last_rtt = 0;
+			intf[i].max_rtt = 0;
 		}
 	}
 }

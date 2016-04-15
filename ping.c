@@ -34,6 +34,8 @@ static void ping_fd_handler(struct uloop_fd *fd,
 	struct timespec time_recv;
 	clock_gettime(CLOCK_MONOTONIC, &time_recv);
 	pi->last_rtt = timespec_diff_ms(pi->time_sent, time_recv);
+	if (pi->last_rtt > pi->max_rtt)
+		pi->max_rtt = pi->last_rtt;
 
 	/* online just confirmed: move timeout for offline to later
 	 * and give the next reply an extra window of two times the last RTT */
@@ -128,6 +130,7 @@ bool ping_init(struct ping_intf* pi)
 	pi->cnt_sent = 0;
 	pi->cnt_succ = 0;
 	pi->last_rtt = 0;
+	pi->max_rtt = 0;
 
 	return true;
 }
