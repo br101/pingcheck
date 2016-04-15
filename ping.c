@@ -15,7 +15,7 @@
 #include <stdio.h>
 #include <unistd.h>
 #include <syslog.h>
-#include <sys/time.h>
+#include <time.h>
 #include "main.h"
 
 /* uloop callback when received something on a ping socket */

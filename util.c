@@ -15,7 +15,7 @@
 #include <stdio.h>
 #include <stdarg.h>
 #include <syslog.h>
-#include <sys/time.h>
+#include <time.h>
 
 void __attribute__ ((format (printf, 2, 3)))
 printlog(int level, const char *format, ...)
