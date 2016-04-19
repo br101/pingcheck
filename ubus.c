@@ -207,11 +207,13 @@ exit:
 
 enum {
 	PINGCHECK_INTF,
+	PINGCHECK_RESET,
 	__PINGCHECK_MAX
 };
 
 static const struct blobmsg_policy intf_policy[] = {
 	[PINGCHECK_INTF] = { .name = "interface", .type = BLOBMSG_TYPE_STRING },
+	[PINGCHECK_RESET] = { .name = "reset", .type = BLOBMSG_TYPE_BOOL },
 };
 
 static struct blob_buf b;
@@ -265,9 +267,17 @@ static int server_status(struct ubus_context *ctx,
 		blobmsg_close_array(&b, arr);
 	}
 
+	if (tb[PINGCHECK_RESET]) {
+		reset_counters(intf);
+	}
+
 	ubus_send_reply(ctx, req, b.head);
 	return 0;
 }
+
+static const struct blobmsg_policy reset_policy[] = {
+	[PINGCHECK_INTF] = { .name = "interface", .type = BLOBMSG_TYPE_STRING },
+};
 
 static int server_reset(__attribute__((unused)) struct ubus_context *ctx,
 			__attribute__((unused)) struct ubus_object *obj,
@@ -278,7 +288,7 @@ static int server_reset(__attribute__((unused)) struct ubus_context *ctx,
 	struct blob_attr *tb[__PINGCHECK_MAX];
 	const char* intf = NULL;
 
-	blobmsg_parse(intf_policy, ARRAY_SIZE(intf_policy), tb, blob_data(msg), blob_len(msg));
+	blobmsg_parse(reset_policy, ARRAY_SIZE(reset_policy), tb, blob_data(msg), blob_len(msg));
 
 	if (tb[PINGCHECK_INTF])
 		intf = blobmsg_get_string(tb[PINGCHECK_INTF]);
