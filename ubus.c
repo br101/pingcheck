@@ -299,7 +299,7 @@ static int server_reset(__attribute__((unused)) struct ubus_context *ctx,
 
 static const struct ubus_method server_methods[] = {
 	UBUS_METHOD("status", server_status, intf_policy),
-	UBUS_METHOD("reset", server_reset, intf_policy),
+	UBUS_METHOD("reset", server_reset, reset_policy),
 };
 
 static struct ubus_object_type server_object_type =
