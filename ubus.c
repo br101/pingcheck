@@ -267,7 +267,7 @@ static int server_status(struct ubus_context *ctx,
 		blobmsg_close_array(&b, arr);
 	}
 
-	if (tb[PINGCHECK_RESET]) {
+	if (tb[PINGCHECK_RESET] && blobmsg_get_bool(tb[PINGCHECK_RESET])) {
 		reset_counters(intf);
 	}
 
