@@ -41,6 +41,8 @@ int uci_config_pingcheck(struct ping_intf* intf, int len)
 	int default_interval = 0;
 	int default_timeout = 0;
 	int default_host = 0;
+	enum protocol default_proto = ICMP;
+	int default_tcp_port = 80;
 
 	uci = uci_alloc_context();
 	if (uci == NULL)
@@ -60,6 +62,12 @@ int uci_config_pingcheck(struct ping_intf* intf, int len)
 			str = uci_lookup_option_string(uci, s, "host");
 			if (str != NULL && inet_aton(str, &inaddr))
 				default_host = inaddr.s_addr;
+			str = uci_lookup_option_string(uci, s, "protocol");
+			if (str != NULL && strcmp(str, "tcp") == 0)
+				default_proto = TCP;
+			val = uci_lookup_option_int(uci, s, "tcp_port");
+			if (val > 0)
+				default_tcp_port = val;
 		} else if (strcmp(s->type, "interface") == 0) {
 			/* interface config, needs at least name */
 			str = uci_lookup_option_string(uci, s, "name");
@@ -83,14 +91,26 @@ int uci_config_pingcheck(struct ping_intf* intf, int len)
 			else if (default_host != 0)
 				intf[idx].conf_host = default_host;
 
+			str = uci_lookup_option_string(uci, s, "protocol");
+			if (str != NULL && strcmp(str, "tcp") == 0)
+				intf[idx].conf_proto = TCP;
+			else if (str != NULL && strcmp(str, "icmp") == 0)
+				intf[idx].conf_proto = ICMP;
+			else
+				intf[idx].conf_proto = default_proto;
+
+			val = uci_lookup_option_int(uci, s, "tcp_port");
+			intf[idx].conf_tcp_port = val > 0 ? val : default_tcp_port;
+
 			if (intf[idx].conf_interval <= 0 || intf[idx].conf_timeout <= 0 ||
 			    intf[idx].conf_host == 0) {
 				printlog(LOG_ERR, "UCI: interface '%s' config not complete", intf[idx].name);
 				continue;
 			} else
-				printlog(LOG_INFO, "Configured interface '%s' interval %d timeout %d host %x",
+				printlog(LOG_INFO, "Configured interface '%s' interval %d timeout %d host %x %s (%d)",
 					intf[idx].name, intf[idx].conf_interval, intf[idx].conf_timeout,
-					intf[idx].conf_host);
+					intf[idx].conf_host, intf[idx].conf_proto == TCP ? "TCP" : "ICMP",
+					intf[idx].conf_tcp_port);
 
 			if (++idx > len) {
 				printlog(LOG_ERR, "UCI: Can not handle more than %d interfaces", len);

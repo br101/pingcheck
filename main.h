@@ -23,6 +23,8 @@
 
 enum online_state { UNKNOWN, DOWN, NO_ROUTE, UP, OFFLINE, ONLINE };
 
+enum protocol { ICMP, TCP };
+
 struct scripts_proc {
 	struct runqueue_process proc;
 	struct ping_intf* intf;
@@ -43,6 +45,8 @@ struct ping_intf {
 	int conf_interval;
 	int conf_timeout;
 	int conf_host;
+	enum protocol conf_proto;
+	int conf_tcp_port;
 
 	/* internal state for ping */
 	struct uloop_fd ufd;
@@ -64,6 +68,10 @@ long timespec_diff_ms(struct timespec start, struct timespec end);
 int icmp_init(const char* ifname);
 bool icmp_echo_send(int fd, int dst, int cnt);
 bool icmp_echo_receive(int fd);
+
+// tcp.c
+int tcp_connect(const char* ifname, int dst, int port);
+bool tcp_check_connect(int fd);
 
 // ping.c
 bool ping_init(struct ping_intf* pi);

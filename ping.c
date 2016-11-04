@@ -18,14 +18,41 @@
 #include <time.h>
 #include "main.h"
 
+static void ping_uloop_fd_close(struct uloop_fd *ufd)
+{
+	if (ufd != NULL && ufd->fd > 0) {
+		uloop_fd_delete(ufd);
+		close(ufd->fd);
+		ufd->fd = 0;
+	}
+}
+
 /* uloop callback when received something on a ping socket */
 static void ping_fd_handler(struct uloop_fd *fd,
 			    __attribute__((unused)) unsigned int events)
 {
 	struct ping_intf* pi = container_of(fd, struct ping_intf, ufd);
 
-	if (!icmp_echo_receive(fd->fd))
-		return;
+	if (pi->conf_proto == ICMP) {
+		if (!icmp_echo_receive(fd->fd))
+			return;
+	} else if (pi->conf_proto == TCP) {
+		/* with TCP, the handler is called when connect() succeds or fails.
+		*
+		* if the connect takes longer than the ping interval, it is timed
+		* out and assumed failed before we open the next regular connection,
+		* and this handler is not called. but if the interval is large and
+		* in other cases, this handler can be called for failed connections,
+		* and to be sure we need to check if connect was successful or not.
+		*
+		* after that we just close the socket, as we don't need to send or
+		* receive any data */
+		bool succ = tcp_check_connect(fd->fd);
+		ping_uloop_fd_close(fd);
+		//printf("TCP connected %d\n", succ);
+		if (!succ)
+			return;
+	}
 
 	//printlog(LOG_DEBUG, "Received pong on '%s'", pi->name);
 	pi->cnt_succ++;
@@ -86,21 +113,24 @@ bool ping_init(struct ping_intf* pi)
 		pi->state = UP;
 	}
 
-	printlog(LOG_INFO, "Init ping on '%s'", pi->name);
+	printlog(LOG_INFO, "Init %s ping on '%s'",
+		 pi->conf_proto == TCP ? "TCP" : "ICMP", pi->name);
 
-	/* init icmp socket */
-	ret = icmp_init(pi->device);
-	if (ret < 0)
-		return false;
+	/* init ICMP socket. for TCP we open a new socket every time */
+	if (pi->conf_proto == ICMP) {
+		ret = icmp_init(pi->device);
+		if (ret < 0)
+			return false;
 
-	/* add socket handler to uloop */
-	pi->ufd.fd = ret;
-	pi->ufd.cb = ping_fd_handler;
-	ret = uloop_fd_add(&pi->ufd, ULOOP_READ);
-	if (ret < 0) {
-		printlog(LOG_ERR, "Could not add uloop fd %d for '%s'",
-			 pi->ufd.fd, pi->name);
-		return false;
+		/* add socket handler to uloop */
+		pi->ufd.fd = ret;
+		pi->ufd.cb = ping_fd_handler;
+		ret = uloop_fd_add(&pi->ufd, ULOOP_READ);
+		if (ret < 0) {
+			printlog(LOG_ERR, "Could not add uloop fd %d for '%s'",
+				pi->ufd.fd, pi->name);
+			return false;
+		}
 	}
 
 	/* regular sending of ping (start first in 1 sec) */
@@ -135,14 +165,49 @@ bool ping_init(struct ping_intf* pi)
 	return true;
 }
 
-bool ping_send(struct ping_intf* pi)
+/* for "ping" using TCP it's enough to just open a connection and see if the
+ * connect fails or succeeds. If the host is unavailable or there is no
+ * connectivity the connect will fail, otherwise it will succeed. This will be
+ * checked in the uloop socket callback above */
+static bool ping_send_tcp(struct ping_intf* pi)
 {
-	if (pi->ufd.fd <= 0) {
-		printlog(LOG_ERR, "ping not init on '%s'", pi->name);
-		return 0;
+	if (pi->ufd.fd > 0) {
+		//printlog(LOG_DEBUG, "TCP connection timed out '%s'", pi->name);
+		ping_uloop_fd_close(&pi->ufd);
 	}
 
-	bool ret = icmp_echo_send(pi->ufd.fd, pi->conf_host, pi->cnt_sent);
+	int ret = tcp_connect(pi->device, pi->conf_host, pi->conf_tcp_port);
+	if (ret > 0) {
+		/* add socket handler to uloop.
+		 * when connect() finishes, select indicates writability */
+		pi->ufd.fd = ret;
+		pi->ufd.cb = ping_fd_handler;
+		ret = uloop_fd_add(&pi->ufd, ULOOP_WRITE);
+		if (ret < 0) {
+			printlog(LOG_ERR, "Could not add uloop fd %d for '%s'",
+				pi->ufd.fd, pi->name);
+			return false;
+		}
+	}
+	return true;
+}
+
+bool ping_send(struct ping_intf* pi)
+{
+	bool ret = false;
+
+	/* either send ICMP ping or start TCP connection */
+	if (pi->conf_proto == ICMP) {
+		if (pi->ufd.fd <= 0) {
+			printlog(LOG_ERR, "ping not init on '%s'", pi->name);
+			return false;
+		}
+		ret = icmp_echo_send(pi->ufd.fd, pi->conf_host, pi->cnt_sent);
+	} else if (pi->conf_proto == TCP) {
+		ret = ping_send_tcp(pi);
+	}
+
+	/* common code */
 	if (ret) {
 		pi->cnt_sent++;
 		clock_gettime(CLOCK_MONOTONIC, &pi->time_sent);
@@ -155,10 +220,5 @@ void ping_stop(struct ping_intf* pi)
 {
 	uloop_timeout_cancel(&pi->timeout_offline);
 	uloop_timeout_cancel(&pi->timeout_send);
-
-	if (pi->ufd.fd > 0) {
-		uloop_fd_delete(&pi->ufd);
-		close(pi->ufd.fd);
-		pi->ufd.fd = 0;
-	}
+	ping_uloop_fd_close(&pi->ufd);
 }
