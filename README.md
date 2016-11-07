@@ -1,7 +1,7 @@
 # pingcheck
-Check connectivity of interfaces in OpenWRT
+Check connectivity of network interfaces in OpenWRT
 
-Checks with "ping" (ICMP echo request/reply) wether a configured host (normally on the Internet) can be reached via a specific network interface. Then makes this information available via `ubus` and triggers "online" and "offline" scripts. It's like hotplug for internet connectivity and especially useful if your router could be connected via multiple interfaces at the same time.
+Checks wether a configured host (normally on the Internet) can be reached via a specific network interface. Then makes this information available via `ubus` and triggers "online" and "offline" scripts. It's like hotplug for internet connectivity and especially useful if your router could be connected via multiple interfaces at the same time. The check be done with classic ICMP echo requests like `ping` or by trying to establish a TCP connection to a web-server (or any TCP server), which can be useful when ICMP is blocked by a firewall.
 
 ## Config options
 
@@ -12,6 +12,8 @@ Checks with "ping" (ICMP echo request/reply) wether a configured host (normally 
 | `host`	| IP address	| yes		| (none)	| IP Address or hostname of ping destination |
 | `interval`	| seconds	| yes		| (none)	| Ping will be sent every 'interval' seconds |
 | `timeout`	| seconds	| yes		| (none)	| After no Ping replies have been received for 'timeout' seconds, the offline scripts will be executed |
+| `protocol`	| `icmp` or `tcp` | no		| `icmp`        | Use classic ICMP ping (default) or TCP connect |
+| `tcp_port`    | port number	| no		| 80	        | TCP port to connect to when protocol is `tcp` |
 
 All these values can either be defined in defaults, or in the interface, but the are required in one of them. Interface config overrides default.
 
@@ -77,7 +79,9 @@ root@OpenWrt:~# ubus call pingcheck status "{'interface':'sta'}"
         "device": "wlan1",
         "percent": 100,
         "sent": 16,
-        "success": 16
+        "success": 16,
+        "last_rtt": 101,
+        "max_rtt": 136
 }
 ```
 
@@ -95,4 +99,11 @@ root@OpenWrt:~# ubus call pingcheck reset '{"interface":"wan"}'
 
 ## Shell Scripts
 
-When a interface status changes, scripts in `/etc/pingcheck/online.d/` or `/etc/pingcheck/offline.d/` are called and provided with `INTERFACE` and `DEVICE` environment variables, similar to hotplug scripts.
+When a interface status changes, scripts in `/etc/pingcheck/online.d/` or `/etc/pingcheck/offline.d/` are called and provided with `INTERFACE`, `DEVICE` and `GLOBAL` environment variables, similar to hotplug scripts. 
+
+| Variable      | Description                                                                           |
+|---------------|---------------------------------------------------------------------------------------|
+| `INTERFACE`   | logical network interface (e.g. `wan`) which goes online or offline                   |
+| `DEVICE`      | physical device (e.g. `eth0`) which goes online or offline                            |
+| `GLOBAL`      | `ONLINE` or `OFFLINE` depending on wether device is online thru other interfaces      |
+
