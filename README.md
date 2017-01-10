@@ -14,6 +14,7 @@ Checks wether a configured host (normally on the Internet) can be reached via a 
 | `timeout`	| seconds	| yes		| (none)	| After no Ping replies have been received for 'timeout' seconds, the offline scripts will be executed |
 | `protocol`	| `icmp` or `tcp` | no		| `icmp`        | Use classic ICMP ping (default) or TCP connect |
 | `tcp_port`    | port number	| no		| 80	        | TCP port to connect to when protocol is `tcp` |
+| `panic`       | minutes	| no		| (not used)	| If the system is OFFLINE for more than this time, the scripts in '/etc/pingcheck/panic.d' will be called |
 
 All these values can either be defined in defaults, or in the interface, but the are required in one of them. Interface config overrides default.
 
@@ -107,3 +108,4 @@ When a interface status changes, scripts in `/etc/pingcheck/online.d/` or `/etc/
 | `DEVICE`      | physical device (e.g. `eth0`) which goes online or offline                            |
 | `GLOBAL`      | `ONLINE` or `OFFLINE` depending on wether device is online thru other interfaces      |
 
+Additionally, if option `panic` is set, scripts in `/etc/pingcheck/panic.d/` are called after the system has been globally offline for more than `panic` minutes.
