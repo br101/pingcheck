@@ -47,7 +47,7 @@ static void task_scripts_run(struct runqueue *q, struct runqueue_task *t)
 	len = snprintf(cmd, sizeof(cmd),
 		       "export INTERFACE=\"%s\"; export DEVICE=\"%s\"; export GLOBAL=\"%s\"; "
 		       "for hook in /etc/pingcheck/%s.d/*; do [ -r \"$hook\" ] && sh $hook; done",
-		       pi->name, pi->device, get_global_status_str(), state_str);
+		       pi->name, pi->device, get_status_str(get_global_status()), state_str);
 
 	if (len <= 0 || (unsigned int)len >= sizeof(cmd)) { // error or truncated
 		printlog(LOG_ERR, "Run scripts commands truncated!");

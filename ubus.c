@@ -238,7 +238,7 @@ static int server_status(struct ubus_context *ctx,
 		if (pi == NULL) {
 			return -1;
 		}
-		blobmsg_add_string(&b, "status", get_status_str(pi));
+		blobmsg_add_string(&b, "status", get_status_str(pi->state));
 		blobmsg_add_string(&b, "interface", pi->name);
 		blobmsg_add_string(&b, "device", pi->device);
 		blobmsg_add_u32(&b, "percent", pi->cnt_sent > 0 ? pi->cnt_succ*100/pi->cnt_sent : 0);
@@ -252,7 +252,7 @@ static int server_status(struct ubus_context *ctx,
 		void* arr;
 		const char* dest[MAX_NUM_INTERFACES];
 
-		blobmsg_add_string(&b, "status", get_global_status_str());
+		blobmsg_add_string(&b, "status", get_status_str(get_global_status()));
 
 		arr = blobmsg_open_array(&b, "online_interfaces");
 		num = get_online_interface_names(dest, MAX_NUM_INTERFACES);

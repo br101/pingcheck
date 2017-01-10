@@ -30,14 +30,14 @@ void state_change(enum online_state state_new, struct ping_intf* pi)
 	pi->state = state_new;
 
 	printlog(LOG_INFO, "Interface '%s' changed to %s", pi->name,
-		 get_status_str(pi));
+		 get_status_str(pi->state));
 
 	scripts_run(pi, state_new);
 }
 
-const char* get_status_str(struct ping_intf* pi)
+const char* get_status_str(enum online_state state)
 {
-	switch (pi->state) {
+	switch (state) {
 		case UNKNOWN: return "UNKNOWN";
 		case DOWN: return "DOWN";
 		case NO_ROUTE: return "NO_ROUTE";
@@ -48,13 +48,13 @@ const char* get_status_str(struct ping_intf* pi)
 	}
 }
 
-const char* get_global_status_str(void)
+enum online_state get_global_status(void)
 {
 	for (int i=0; i < MAX_NUM_INTERFACES && intf[i].name[0]; i++) {
 		if (intf[i].state == ONLINE)
-			return "ONLINE";
+			return ONLINE;
 	}
-	return "OFFLINE";
+	return OFFLINE;
 }
 
 int get_online_interface_names(const char** dest, int destLen)
@@ -165,7 +165,7 @@ int main(__attribute__((unused)) int argc, __attribute__((unused)) char** argv)
 	printf("\n");
 	for (int i=0; i < MAX_NUM_INTERFACES && intf[i].name[0]; i++) {
 		printf("%s:\t%-8s %3.0f%% (%d/%d on %s)\n", intf[i].name,
-		       get_status_str(&intf[i]),
+		       get_status_str(intf[i].state),
 		       (float)intf[i].cnt_succ*100/intf[i].cnt_sent,
 		       intf[i].cnt_succ, intf[i].cnt_sent, intf[i].device);
 		ping_stop(&intf[i]);

@@ -98,8 +98,8 @@ void scripts_finish(void);
 // main.c
 void notify_interface(const char* interface, const char* action);
 struct ping_intf* get_interface(const char* interface);
-const char* get_status_str(struct ping_intf* pi);
-const char* get_global_status_str();
+const char* get_status_str(enum online_state state);
+enum online_state get_global_status();
 int get_online_interface_names(const char** dest, int destLen);
 int get_all_interface_names(const char** dest, int destLen);
 void state_change(enum online_state state_new, struct ping_intf* pi);
