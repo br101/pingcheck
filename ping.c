@@ -16,6 +16,10 @@
 #include <unistd.h>
 #include <syslog.h>
 #include <time.h>
+#include <string.h>
+#include <arpa/inet.h>
+#include <sys/socket.h>
+#include <netdb.h>
 #include "main.h"
 
 static void ping_uloop_fd_close(struct uloop_fd *ufd)
@@ -165,6 +169,30 @@ bool ping_init(struct ping_intf* pi)
 	return true;
 }
 
+static void ping_resolve(struct ping_intf* pi)
+{
+	struct addrinfo hints;
+	struct addrinfo* addr;
+
+	memset(&hints, 0, sizeof(struct addrinfo));
+	hints.ai_family = AF_INET;
+	hints.ai_socktype = pi->conf_proto == ICMP? SOCK_DGRAM : SOCK_STREAM;
+
+	int r = getaddrinfo(pi->conf_hostname, NULL, &hints, &addr);
+	if (r < 0 || addr == NULL) {
+		printlog(LOG_ERR, "Failed to resolve");
+		return;
+	}
+
+	/* use only first address */
+	struct sockaddr_in* sa = (struct sockaddr_in*)addr->ai_addr;
+	printf("Resolved %s to %s\n", pi->conf_hostname,
+	       inet_ntoa((struct in_addr)sa->sin_addr));
+	pi->conf_host = sa->sin_addr.s_addr;
+
+	freeaddrinfo(addr);
+}
+
 /* for "ping" using TCP it's enough to just open a connection and see if the
  * connect fails or succeeds. If the host is unavailable or there is no
  * connectivity the connect will fail, otherwise it will succeed. This will be
@@ -195,6 +223,10 @@ static bool ping_send_tcp(struct ping_intf* pi)
 bool ping_send(struct ping_intf* pi)
 {
 	bool ret = false;
+
+	/* resolve at least every 10th time */
+	if (pi->conf_host == 0 || pi->state != ONLINE || pi->cnt_sent % 10 == 0)
+		ping_resolve(pi);
 
 	/* either send ICMP ping or start TCP connection */
 	if (pi->conf_proto == ICMP) {

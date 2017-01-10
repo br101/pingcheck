@@ -17,6 +17,7 @@
 #include <libubox/runqueue.h>
 
 #define MAX_IFNAME_LEN		16
+#define MAX_HOSTNAME_LEN	64
 #define MAX_NUM_INTERFACES	8
 #define SCRIPTS_TIMEOUT		10 /* 10 sec */
 #define UBUS_TIMEOUT		3000 /* 3 sec */
@@ -44,7 +45,8 @@ struct ping_intf {
 	/* config items */
 	int conf_interval;
 	int conf_timeout;
-	int conf_host;
+	char conf_hostname[MAX_HOSTNAME_LEN];
+	int conf_host;		/* resolved IP */
 	enum protocol conf_proto;
 	int conf_tcp_port;
 
