@@ -22,6 +22,9 @@
 /* main list of interfaces */
 static struct ping_intf intf[MAX_NUM_INTERFACES];
 
+/* timeout for panic scripts */
+static struct uloop_timeout timeout_panic;
+
 void state_change(enum online_state state_new, struct ping_intf* pi)
 {
 	if (pi->state == state_new) /* no change */
@@ -31,6 +34,14 @@ void state_change(enum online_state state_new, struct ping_intf* pi)
 
 	printlog(LOG_INFO, "Interface '%s' changed to %s", pi->name,
 		 get_status_str(pi->state));
+
+	enum online_state global_state = get_global_status();
+	if (global_state == OFFLINE) {
+		if (pi->conf_panic_timeout > 0)
+			uloop_timeout_set(&timeout_panic, pi->conf_panic_timeout * 60 * 1000);
+	} else {
+		uloop_timeout_cancel(&timeout_panic);
+	}
 
 	scripts_run(pi, state_new);
 }
@@ -120,6 +131,12 @@ void reset_counters(const char* interface) {
 	}
 }
 
+/* uloop timeout callback when offline for too long */
+static void uto_panic_cb(__attribute__((unused)) struct uloop_timeout *t)
+{
+	scripts_run_panic();
+}
+
 int main(__attribute__((unused)) int argc, __attribute__((unused)) char** argv)
 {
 	int ret;
@@ -157,6 +174,11 @@ int main(__attribute__((unused)) int argc, __attribute__((unused)) char** argv)
 	for (int i=0; i < MAX_NUM_INTERFACES && intf[i].name[0]; i++) {
 		ping_init(&intf[i]);
 	}
+
+	/* initialize panic handler */
+	timeout_panic.cb = uto_panic_cb;
+	if (intf[0].conf_panic_timeout > 0)
+		uloop_timeout_set(&timeout_panic, intf[0].conf_panic_timeout * 60 * 1000);
 
 	/* main loop */
 	uloop_run();

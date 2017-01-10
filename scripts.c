@@ -21,6 +21,9 @@
 /* run queue for scripts */
 static struct runqueue runq;
 
+/* for panic scripts */
+static struct runqueue_process proc_panic;
+
 /*
  * Here we fork and run the scripts in the child process.
  * The parent process just monitors the child process.
@@ -127,6 +130,49 @@ void scripts_run(struct ping_intf* pi, enum online_state state_new)
 	scr->intf = pi;
 	scr->state = state_new;
 	runqueue_task_add(&runq, &scr->proc.task, false);
+}
+
+static void task_panic_run(struct runqueue *q, struct runqueue_task *t)
+{
+	pid_t pid = fork();
+	if (pid < 0) {
+		printlog(LOG_ERR, "Run scripts fork failed!");
+		return;
+	} else if (pid > 0) {
+		/* parent process: monitor until child has finished */
+		struct runqueue_process* rp = (struct runqueue_process*)t;
+		runqueue_process_add(q, rp, pid);
+		return;
+	}
+
+	/* child process */
+	char cmd[500];
+	int len = snprintf(cmd, sizeof(cmd),
+		       "for hook in /etc/pingcheck/panic.d/*; do [ -r \"$hook\" ] && sh $hook; done");
+
+	if (len <= 0 || (unsigned int)len >= sizeof(cmd)) { // error or truncated
+		printlog(LOG_ERR, "Run scripts commands truncated!");
+		_exit(EXIT_FAILURE);
+	}
+
+	printlog(LOG_NOTICE, "Running PANIC scripts");
+	int ret = execlp("/bin/sh", "/bin/sh", "-c", cmd, NULL);
+	if (ret == -1) {
+		printlog(LOG_ERR, "Run scripts exec error!");
+		_exit(EXIT_FAILURE);
+	}
+}
+
+static const struct runqueue_task_type task_scripts_panic_type = {
+	.run = task_panic_run,
+};
+
+void scripts_run_panic()
+{
+	printlog(LOG_NOTICE, "Scheduling PANIC scripts");
+	proc_panic.task.type = &task_scripts_panic_type;
+	proc_panic.task.run_timeout = SCRIPTS_TIMEOUT * 1000;
+	runqueue_task_add(&runq, &proc_panic.task, false);
 }
 
 void scripts_init(void)

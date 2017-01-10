@@ -42,6 +42,7 @@ int uci_config_pingcheck(struct ping_intf* intf, int len)
 	const char* default_hostname = NULL;
 	enum protocol default_proto = ICMP;
 	int default_tcp_port = 80;
+	int default_panic_to = -1; // don't use
 
 	uci = uci_alloc_context();
 	if (uci == NULL)
@@ -59,6 +60,7 @@ int uci_config_pingcheck(struct ping_intf* intf, int len)
 			default_interval = uci_lookup_option_int(uci, s, "interval");
 			default_timeout = uci_lookup_option_int(uci, s, "timeout");
 			default_hostname = uci_lookup_option_string(uci, s, "host");
+			default_panic_to = uci_lookup_option_int(uci, s, "panic");
 			str = uci_lookup_option_string(uci, s, "protocol");
 			if (str != NULL && strcmp(str, "tcp") == 0)
 				default_proto = TCP;
@@ -81,6 +83,9 @@ int uci_config_pingcheck(struct ping_intf* intf, int len)
 
 			val = uci_lookup_option_int(uci, s, "timeout");
 			intf[idx].conf_timeout = val > 0 ? val : default_timeout;
+
+			val = uci_lookup_option_int(uci, s, "panic");
+			intf[idx].conf_panic_timeout = val > 0 ? val : default_panic_to;
 
 			str = uci_lookup_option_string(uci, s, "host");
 			if (str != NULL)

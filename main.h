@@ -49,6 +49,7 @@ struct ping_intf {
 	int conf_host;		/* resolved IP */
 	enum protocol conf_proto;
 	int conf_tcp_port;
+	int conf_panic_timeout;	/* minutes */
 
 	/* internal state for ping */
 	struct uloop_fd ufd;
@@ -93,6 +94,7 @@ int uci_config_pingcheck(struct ping_intf* intf, int len);
 // scripts.c
 void scripts_init(void);
 void scripts_run(struct ping_intf* pi, enum online_state state_new);
+void scripts_run_panic(void);
 void scripts_finish(void);
 
 // main.c
