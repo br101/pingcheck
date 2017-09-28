@@ -63,8 +63,6 @@ struct ping_intf {
 };
 
 // utils.c
-void __attribute__ ((format (printf, 2, 3)))
-printlog(int level, const char *format, ...);
 long timespec_diff_ms(struct timespec start, struct timespec end);
 
 // icmp.c

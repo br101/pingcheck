@@ -1,5 +1,5 @@
 NAME=pingcheck
-OBJS=main.o icmp.o ping.o util.o ubus.o uci.o scripts.o tcp.o
+OBJS=main.o icmp.o ping.o util.o ubus.o uci.o scripts.o tcp.o log.o
 LIBS=-lubus -lubox -luci
 CFLAGS+=-std=gnu99 -Wall -Wextra -g -I.
 

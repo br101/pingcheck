@@ -16,10 +16,10 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-#include <syslog.h>
 #include <arpa/inet.h>
 #include <uci.h>
 #include "main.h"
+#include "log.h"
 
 /** analogous to uci_lookup_option_string from uci.h, returns -1 when not found */
 static int uci_lookup_option_int(struct uci_context *uci, struct uci_section *s,
@@ -73,7 +73,7 @@ int uci_config_pingcheck(struct ping_intf* intf, int len)
 			if (str == NULL)
 				continue;
 			if (strlen(str) >= MAX_IFNAME_LEN) {
-				printlog(LOG_ERR, "UCI: Interface name too long");
+				LOG_ERR("UCI: Interface name too long");
 				continue;
 			}
 			strcpy(intf[idx].name, str);
@@ -106,16 +106,16 @@ int uci_config_pingcheck(struct ping_intf* intf, int len)
 
 			if (intf[idx].conf_interval <= 0 || intf[idx].conf_timeout <= 0 ||
 			    intf[idx].conf_hostname[0] == '\0') {
-				printlog(LOG_ERR, "UCI: interface '%s' config not complete", intf[idx].name);
+				LOG_ERR("UCI: interface '%s' config not complete", intf[idx].name);
 				continue;
 			} else
-				printlog(LOG_INFO, "Configured interface '%s' interval %d timeout %d host %s %s (%d)",
+				LOG_INF("Configured interface '%s' interval %d timeout %d host %s %s (%d)",
 					intf[idx].name, intf[idx].conf_interval, intf[idx].conf_timeout,
 					intf[idx].conf_hostname, intf[idx].conf_proto == TCP ? "TCP" : "ICMP",
 					intf[idx].conf_tcp_port);
 
 			if (++idx > len) {
-				printlog(LOG_ERR, "UCI: Can not handle more than %d interfaces", len);
+				LOG_ERR("UCI: Can not handle more than %d interfaces", len);
 				return 0;
 			}
 		}
