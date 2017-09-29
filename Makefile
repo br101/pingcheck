@@ -1,16 +1,22 @@
-NAME=pingcheck
-OBJS=main.o icmp.o ping.o util.o ubus.o uci.o scripts.o tcp.o log.o
-LIBS=-lubus -lubox -luci
-CFLAGS+=-std=gnu99 -Wall -Wextra -g -I.
+NAME		= pingcheck
 
-all: $(NAME)
+SRC		= main.c
+SRC		+= icmp.c
+SRC		+= ping.c
+SRC		+= util.c
+SRC		+= ubus.c
+SRC		+= uci.c
+SRC		+= scripts.c
+SRC		+= tcp.c
+SRC		+= log.c
 
-$(NAME): $(OBJS)
-	$(CC) $(LDFLAGS) -o $@ $(OBJS) $(LIBS)
+LIBS		= -lubus -lubox -luci
 
-check:
-	sparse $(CFLAGS) -D__linux__ *.[ch]
+INCLUDES	+= -I.
+CFLAGS		+=-std=gnu99 -Wall -Wextra -g
 
+all: bin
 clean:
-	-rm -f *.o *~
-	-rm -f $(NAME)
+check:
+
+include Makefile.default
