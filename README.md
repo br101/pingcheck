@@ -1,7 +1,7 @@
 # pingcheck
 Check connectivity of network interfaces in OpenWRT
 
-Checks wether a configured host (normally on the Internet) can be reached via a specific network interface. Then makes this information available via `ubus` and triggers "online" and "offline" scripts. It's like hotplug for internet connectivity and especially useful if your router could be connected via multiple interfaces at the same time. The check be done with classic ICMP echo requests like `ping` or by trying to establish a TCP connection to a web-server (or any TCP server), which can be useful when ICMP is blocked by a firewall.
+Checks wether a configured host (normally on the Internet) can be reached via a specific network interface. Then makes this information available via `ubus` and triggers "online" and "offline" scripts. It's like "hotplug" for internet connectivity and especially useful if your router could be connected via multiple interfaces (say Ethernet, Wifi or UMTS) at the same time. The check can be done with classic ICMP echo requests (like `ping`) or by opening a TCP connection to a web-server (or any TCP server), which can be useful when ICMP is blocked by a firewall.
 
 ## Config options
 
