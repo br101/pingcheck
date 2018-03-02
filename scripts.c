@@ -16,7 +16,6 @@
 #include <unistd.h>
 #include <stdlib.h>
 #include "main.h"
-#include "log.h"
 
 /* run queue for scripts */
 static struct runqueue runq;
@@ -38,7 +37,7 @@ static void task_scripts_run(struct runqueue *q, struct runqueue_task *t)
 
 	pid_t pid = fork();
 	if (pid < 0) {
-		LOG_ERR("Run scripts fork failed!");
+		ULOG_ERR("Run scripts fork failed!\n");
 		return;
 	} else if (pid > 0) {
 		/* parent process: monitor until child has finished */
@@ -53,14 +52,14 @@ static void task_scripts_run(struct runqueue *q, struct runqueue_task *t)
 		       pi->name, pi->device, get_status_str(get_global_status()), state_str);
 
 	if (len <= 0 || (unsigned int)len >= sizeof(cmd)) { // error or truncated
-		LOG_ERR("Run scripts commands truncated!");
+		ULOG_ERR("Run scripts commands truncated!\n");
 		_exit(EXIT_FAILURE);
 	}
 
-	LOG_NOTI("Running '%s' scripts for '%s'", state_str, pi->name);
+	ULOG_NOTE("Running '%s' scripts for '%s'\n", state_str, pi->name);
 	int ret = execlp("/bin/sh", "/bin/sh", "-c", cmd, NULL);
 	if (ret == -1) {
-		LOG_ERR("Run scripts exec error!");
+		ULOG_ERR("Run scripts exec error!\n");
 		_exit(EXIT_FAILURE);
 	}
 }
@@ -69,7 +68,7 @@ static void task_scripts_run(struct runqueue *q, struct runqueue_task *t)
 static void task_scripts_cancel(struct runqueue *q, struct runqueue_task *t, int type)
 {
 	struct scripts_proc* scr = container_of(t, struct scripts_proc, proc.task);
-	LOG_NOTI("'%s' scripts for '%s' cancelled",
+	ULOG_NOTE("'%s' scripts for '%s' cancelled\n",
 		 scr->state == ONLINE ? "online" : "offline", scr->intf->name);
 	runqueue_process_cancel_cb(q, t, type);
 }
@@ -78,7 +77,7 @@ static void task_scripts_cancel(struct runqueue *q, struct runqueue_task *t, int
 static void task_scripts_kill(struct runqueue *q, struct runqueue_task *t)
 {
 	struct scripts_proc* scr = container_of(t, struct scripts_proc, proc.task);
-	LOG_NOTI("'%s' scripts for '%s' killed",
+	ULOG_NOTE("'%s' scripts for '%s' killed\n",
 		 scr->state == ONLINE ? "online" : "offline", scr->intf->name);
 	runqueue_process_kill_cb(q, t);
 }
@@ -111,20 +110,20 @@ void scripts_run(struct ping_intf* pi, enum online_state state_new)
 	 * and OFFLINE script is already queued and not running yet, cancel it
 	 */
 	if (scr_other->proc.task.queued && !scr_other->proc.task.running) {
-		LOG_NOTI("Cancelling obsolete '%s' scripts for '%s'",
+		ULOG_NOTE("Cancelling obsolete '%s' scripts for '%s'\n",
 			 scr->state != ONLINE ? "online" : "offline", pi->name);
 		runqueue_task_cancel(&scr_other->proc.task, 1);
 	}
 
 	/* don't queue the same scripts twice */
 	if (scr->proc.task.queued || scr->proc.task.running) {
-		LOG_NOTI("'%s' scripts for '%s' already queued or running",
+		ULOG_NOTE("'%s' scripts for '%s' already queued or running\n",
 			 state_str, pi->name);
 		return;
 	}
 
 	/* add runqueue task for running the scripts */
-	LOG_NOTI("Scheduling '%s' scripts for '%s'", state_str, pi->name);
+	ULOG_NOTE("Scheduling '%s' scripts for '%s'\n", state_str, pi->name);
 	scr->proc.task.type = &task_scripts_type;
 	scr->proc.task.run_timeout = SCRIPTS_TIMEOUT * 1000;
 	scr->intf = pi;
@@ -136,7 +135,7 @@ static void task_panic_run(struct runqueue *q, struct runqueue_task *t)
 {
 	pid_t pid = fork();
 	if (pid < 0) {
-		LOG_ERR("Run scripts fork failed!");
+		ULOG_ERR("Run scripts fork failed!\n");
 		return;
 	} else if (pid > 0) {
 		/* parent process: monitor until child has finished */
@@ -151,14 +150,14 @@ static void task_panic_run(struct runqueue *q, struct runqueue_task *t)
 		       "for hook in /etc/pingcheck/panic.d/*; do [ -r \"$hook\" ] && sh $hook; done");
 
 	if (len <= 0 || (unsigned int)len >= sizeof(cmd)) { // error or truncated
-		LOG_ERR("Run scripts commands truncated!");
+		ULOG_ERR("Run scripts commands truncated!\n");
 		_exit(EXIT_FAILURE);
 	}
 
-	LOG_NOTI("Running PANIC scripts");
+	ULOG_NOTE("Running PANIC scripts\n");
 	int ret = execlp("/bin/sh", "/bin/sh", "-c", cmd, NULL);
 	if (ret == -1) {
-		LOG_ERR("Run scripts exec error!");
+		ULOG_ERR("Run scripts exec error!\n");
 		_exit(EXIT_FAILURE);
 	}
 }
@@ -169,7 +168,7 @@ static const struct runqueue_task_type task_scripts_panic_type = {
 
 void scripts_run_panic()
 {
-	LOG_NOTI("Scheduling PANIC scripts");
+	ULOG_NOTE("Scheduling PANIC scripts\n");
 	proc_panic.task.type = &task_scripts_panic_type;
 	proc_panic.task.run_timeout = SCRIPTS_TIMEOUT * 1000;
 	runqueue_task_add(&runq, &proc_panic.task, false);

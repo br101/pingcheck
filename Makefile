@@ -8,7 +8,6 @@ SRC		+= ubus.c
 SRC		+= uci.c
 SRC		+= scripts.c
 SRC		+= tcp.c
-SRC		+= log.c
 
 LIBS		= -lubus -lubox -luci
 
