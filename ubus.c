@@ -15,7 +15,6 @@
 #include <unistd.h>
 #include <libubus.h>
 #include "main.h"
-#include "log.h"
 
 static struct ubus_context *ctx;
 
@@ -172,7 +171,7 @@ int ubus_interface_get_status(const char* name, char* device, size_t device_len)
 		ret = -1; goto exit; // error
 	}
 	if (strlen(dev) >= device_len) {
-		LOG_ERR("ubus_interface_get_status: device_len too short");
+		ULOG_ERR("ubus_interface_get_status: device_len too short\n");
 		ret = -1; goto exit; // error
 	}
 	strcpy(device, dev);
@@ -317,7 +316,7 @@ bool ubus_register_server(void) {
 
 	ret = ubus_add_object(ctx, &server_object);
 	if (ret)
-		LOG_ERR("Failed to add server object: %s\n", ubus_strerror(ret));
+		ULOG_ERR("Failed to add server object: %s\n", ubus_strerror(ret));
 	return ret ? false : true;
 }
 
@@ -328,7 +327,7 @@ bool ubus_init(void)
 {
 	ctx = ubus_connect(NULL);
 	if (!ctx) {
-		LOG_ERR("Failed to connect to ubus");
+		ULOG_ERR("Failed to connect to ubus\n");
 		return false;
 	}
 	return true;

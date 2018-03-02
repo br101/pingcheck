@@ -13,6 +13,7 @@
  * GNU General Public License for more details.
  */
 #include <stdbool.h>
+#include <libubox/ulog.h>
 #include <libubox/uloop.h>
 #include <libubox/runqueue.h>
 

@@ -20,7 +20,6 @@
 #include <sys/socket.h>
 #include <netdb.h>
 #include "main.h"
-#include "log.h"
 
 static void ping_uloop_fd_close(struct uloop_fd *ufd)
 {
@@ -58,7 +57,7 @@ static void ping_fd_handler(struct uloop_fd *fd,
 			return;
 	}
 
-	//LOG_DBG("Received pong on '%s'", pi->name);
+	//ULOG_DBG("Received pong on '%s'", pi->name);
 	pi->cnt_succ++;
 
 	/* calculate round trip time */
@@ -96,28 +95,28 @@ bool ping_init(struct ping_intf* pi)
 	int ret;
 
 	if (pi->ufd.fd != 0) {
-		LOG_ERR("Ping on '%s' already init", pi->name);
+		ULOG_ERR("Ping on '%s' already init\n", pi->name);
 		return true;
 	}
 
 	ret = ubus_interface_get_status(pi->name, pi->device, MAX_IFNAME_LEN);
 	if (ret < 0) {
-		LOG_INF("Interface '%s' not found or error", pi->name);
+		ULOG_INFO("Interface '%s' not found or error\n", pi->name);
 		pi->state = UNKNOWN;
 		return false;
 	} else if (ret == 0) {
-		LOG_INF("Interface '%s' not up", pi->name);
+		ULOG_INFO("Interface '%s' not up\n", pi->name);
 		pi->state = DOWN;
 		return false;
 	} else if (ret == 1) {
-		LOG_INF("Interface '%s' no route", pi->name);
+		ULOG_INFO("Interface '%s' no route\n", pi->name);
 		pi->state = NO_ROUTE;
 		return false;
 	} else if (ret == 2) {
 		pi->state = UP;
 	}
 
-	LOG_INF("Init %s ping on '%s'",
+	ULOG_INFO("Init %s ping on '%s'\n",
 		 pi->conf_proto == TCP ? "TCP" : "ICMP", pi->name);
 
 	/* init ICMP socket. for TCP we open a new socket every time */
@@ -131,7 +130,7 @@ bool ping_init(struct ping_intf* pi)
 		pi->ufd.cb = ping_fd_handler;
 		ret = uloop_fd_add(&pi->ufd, ULOOP_READ);
 		if (ret < 0) {
-			LOG_ERR("Could not add uloop fd %d for '%s'",
+			ULOG_ERR("Could not add uloop fd %d for '%s'\n",
 				pi->ufd.fd, pi->name);
 			return false;
 		}
@@ -141,7 +140,7 @@ bool ping_init(struct ping_intf* pi)
 	pi->timeout_send.cb = uto_ping_send_cb;
 	ret = uloop_timeout_set(&pi->timeout_send, 1000);
 	if (ret < 0) {
-		LOG_ERR("Could not add uloop send timeout for '%s'",
+		ULOG_ERR("Could not add uloop send timeout for '%s'\n",
 			 pi->name);
 		return false;
 	}
@@ -155,7 +154,7 @@ bool ping_init(struct ping_intf* pi)
 	pi->timeout_offline.cb = uto_offline_cb;
 	ret = uloop_timeout_set(&pi->timeout_offline, pi->conf_timeout * 1000 + 900);
 	if (ret < 0) {
-		LOG_ERR("Could not add uloop offline timeout for '%s'",
+		ULOG_ERR("Could not add uloop offline timeout for '%s'\n",
 			 pi->name);
 		return false;
 	}
@@ -180,7 +179,7 @@ static void ping_resolve(struct ping_intf* pi)
 
 	int r = getaddrinfo(pi->conf_hostname, NULL, &hints, &addr);
 	if (r < 0 || addr == NULL) {
-		LOG_ERR("Failed to resolve");
+		ULOG_ERR("Failed to resolve\n");
 		return;
 	}
 
@@ -200,7 +199,7 @@ static void ping_resolve(struct ping_intf* pi)
 static bool ping_send_tcp(struct ping_intf* pi)
 {
 	if (pi->ufd.fd > 0) {
-		//LOG_DBG("TCP connection timed out '%s'", pi->name);
+		//ULOG_DBG("TCP connection timed out '%s'", pi->name);
 		ping_uloop_fd_close(&pi->ufd);
 	}
 
@@ -212,7 +211,7 @@ static bool ping_send_tcp(struct ping_intf* pi)
 		pi->ufd.cb = ping_fd_handler;
 		ret = uloop_fd_add(&pi->ufd, ULOOP_WRITE);
 		if (ret < 0) {
-			LOG_ERR("Could not add uloop fd %d for '%s'",
+			ULOG_ERR("Could not add uloop fd %d for '%s'\n",
 				pi->ufd.fd, pi->name);
 			return false;
 		}
@@ -231,7 +230,7 @@ bool ping_send(struct ping_intf* pi)
 	/* either send ICMP ping or start TCP connection */
 	if (pi->conf_proto == ICMP) {
 		if (pi->ufd.fd <= 0) {
-			LOG_ERR("ping not init on '%s'", pi->name);
+			ULOG_ERR("ping not init on '%s'\n", pi->name);
 			return false;
 		}
 		ret = icmp_echo_send(pi->ufd.fd, pi->conf_host, pi->cnt_sent);
@@ -244,7 +243,7 @@ bool ping_send(struct ping_intf* pi)
 		pi->cnt_sent++;
 		clock_gettime(CLOCK_MONOTONIC, &pi->time_sent);
 	} else
-		LOG_ERR("Could not send ping on '%s'", pi->name);
+		ULOG_ERR("Could not send ping on '%s'\n", pi->name);
 	return ret;
 }
 

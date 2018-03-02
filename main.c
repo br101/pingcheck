@@ -17,7 +17,6 @@
 #include <stdlib.h>
 #include <string.h>
 #include "main.h"
-#include "log.h"
 
 /* main list of interfaces */
 static struct ping_intf intf[MAX_NUM_INTERFACES];
@@ -32,7 +31,7 @@ void state_change(enum online_state state_new, struct ping_intf* pi)
 
 	pi->state = state_new;
 
-	LOG_INF("Interface '%s' changed to %s", pi->name,
+	ULOG_INFO("Interface '%s' changed to %s\n", pi->name,
 		 get_status_str(pi->state));
 
 	enum online_state global_state = get_global_status();
@@ -95,11 +94,11 @@ void notify_interface(const char* interface, const char* action)
 		return;
 
 	if (strcmp(action, "ifup") == 0) {
-		LOG_INF("Interface '%s' event UP", interface);
+		ULOG_INFO("Interface '%s' event UP\n", interface);
 		ping_init(pi);
 		ping_send(pi);
 	} else if (strcmp(action, "ifdown") == 0) {
-		LOG_INF("Interface '%s' event DOWN", interface);
+		ULOG_INFO("Interface '%s' event DOWN\n", interface);
 		ping_stop(pi);
 		state_change(DOWN, pi);
 	}
@@ -141,17 +140,15 @@ int main(__attribute__((unused)) int argc, __attribute__((unused)) char** argv)
 {
 	int ret;
 
-	log_open("pingcheck");
-
 	ret = uloop_init();
 	if (ret < 0) {
-		LOG_CRIT("Could not initialize uloop");
+		ULOG_ERR("Could not initialize uloop\n");
 		return EXIT_FAILURE;
 	}
 
 	ret = uci_config_pingcheck(intf, MAX_NUM_INTERFACES);
 	if (!ret) {
-		LOG_CRIT("Could not read UCI config");
+		ULOG_ERR("Could not read UCI config\n");
 		goto exit;
 	}
 
@@ -164,7 +161,7 @@ int main(__attribute__((unused)) int argc, __attribute__((unused)) char** argv)
 	/* listen for ubus network interface events */
 	ret = ubus_listen_network_events();
 	if (!ret) {
-		LOG_CRIT("Could not listen to interface events");
+		ULOG_ERR("Could not listen to interface events\n");
 		goto exit;
 	}
 
@@ -197,7 +194,6 @@ exit:
 	scripts_finish();
 	uloop_done();
 	ubus_finish();
-	log_close();
 
 	return ret ? EXIT_SUCCESS : EXIT_FAILURE;
 }
