@@ -22,7 +22,7 @@
 #define SCRIPTS_TIMEOUT		10 /* 10 sec */
 #define UBUS_TIMEOUT		3000 /* 3 sec */
 
-enum online_state { UNKNOWN, DOWN, NO_ROUTE, UP, OFFLINE, ONLINE };
+enum online_state { UNKNOWN, DOWN, UP_WITHOUT_DEFAULT_ROUTE, UP, OFFLINE, ONLINE };
 
 enum protocol { ICMP, TCP };
 
