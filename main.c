@@ -51,7 +51,7 @@ const char* get_status_str(enum online_state state)
 	switch (state) {
 		case UNKNOWN: return "UNKNOWN";
 		case DOWN: return "DOWN";
-		case NO_ROUTE: return "NO_ROUTE";
+		case UP_WITHOUT_DEFAULT_ROUTE: return "UP_WITHOUT_DEFAULT_ROUTE";
 		case UP: return "UP";
 		case OFFLINE: return "OFFLINE";
 		case ONLINE: return "ONLINE";
