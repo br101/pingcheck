@@ -110,9 +110,8 @@ bool ping_init(struct ping_intf* pi)
 		pi->state = DOWN;
 		return false;
 	} else if (ret == 1) {
-		LOG_INF("Interface '%s' no route", pi->name);
-		pi->state = NO_ROUTE;
-		return false;
+		LOG_INF("Interface '%s' has no default route but local one", pi->name);
+		pi->state = UP_WITHOUT_DEFAULT_ROUTE;
 	} else if (ret == 2) {
 		pi->state = UP;
 	}
