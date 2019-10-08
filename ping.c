@@ -110,14 +110,15 @@ bool ping_init(struct ping_intf* pi)
 		pi->state = DOWN;
 		return false;
 	} else if (ret == 1) {
-		LOG_INF("Interface '%s' has no default route but local one", pi->name);
+		LOG_INF("Interface '%s' (%s) has no default route but local one",
+			pi->name, pi->device);
 		pi->state = UP_WITHOUT_DEFAULT_ROUTE;
 	} else if (ret == 2) {
 		pi->state = UP;
 	}
 
-	LOG_INF("Init %s ping on '%s'",
-		 pi->conf_proto == TCP ? "TCP" : "ICMP", pi->name);
+	LOG_INF("Init %s ping on '%s' (%s)",
+		 pi->conf_proto == TCP ? "TCP" : "ICMP", pi->name, pi->device);
 
 	/* init ICMP socket. for TCP we open a new socket every time */
 	if (pi->conf_proto == ICMP) {
