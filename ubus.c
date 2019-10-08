@@ -164,10 +164,10 @@ int ubus_interface_get_status(const char* name, char* device, size_t device_len)
 	}
 
 	// device
-	if (tb[IFSTAT_DEVICE]) {
-		dev = blobmsg_get_string(tb[IFSTAT_DEVICE]);
-	} else if (tb[IFSTAT_L3DEVICE]) {
+	if (tb[IFSTAT_L3DEVICE]) {
 		dev = blobmsg_get_string(tb[IFSTAT_L3DEVICE]);
+	} else if (tb[IFSTAT_DEVICE]) {
+		dev = blobmsg_get_string(tb[IFSTAT_DEVICE]);
 	} else {
 		ret = -1; goto exit; // error
 	}
