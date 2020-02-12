@@ -16,8 +16,8 @@
 #include <libubox/uloop.h>
 #include <libubox/runqueue.h>
 
-#define MAX_IFNAME_LEN		16
-#define MAX_HOSTNAME_LEN	64
+#define MAX_IFNAME_LEN		256
+#define MAX_HOSTNAME_LEN	256
 #define MAX_NUM_INTERFACES	8
 #define SCRIPTS_TIMEOUT		10 /* 10 sec */
 #define UBUS_TIMEOUT		3000 /* 3 sec */
