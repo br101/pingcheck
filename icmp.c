@@ -16,7 +16,7 @@
 #include <err.h>
 #include <linux/icmp.h>
 #include <linux/ip.h>
-#include <net/if.h>
+#include <linux/if.h>
 #include <netinet/in.h>
 #include <stdio.h>
 #include <string.h>

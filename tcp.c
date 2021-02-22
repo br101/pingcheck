@@ -16,7 +16,7 @@
 #include <err.h>
 #include <errno.h>
 #include <fcntl.h>
-#include <net/if.h>
+#include <linux/if.h>
 #include <netinet/in.h>
 #include <stdio.h>
 #include <string.h>
