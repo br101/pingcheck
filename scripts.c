@@ -12,11 +12,11 @@
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  * GNU General Public License for more details.
  */
-#include <stdio.h>
-#include <unistd.h>
-#include <stdlib.h>
-#include "main.h"
 #include "log.h"
+#include "main.h"
+#include <stdio.h>
+#include <stdlib.h>
+#include <unistd.h>
 
 /* run queue for scripts */
 static struct runqueue runq;
@@ -28,7 +28,7 @@ static struct runqueue_process proc_panic;
  * Here we fork and run the scripts in the child process.
  * The parent process just monitors the child process.
  */
-static void task_scripts_run(struct runqueue *q, struct runqueue_task *t)
+static void task_scripts_run(struct runqueue* q, struct runqueue_task* t)
 {
 	char cmd[500];
 	int len = 0;
@@ -47,10 +47,12 @@ static void task_scripts_run(struct runqueue *q, struct runqueue_task *t)
 	}
 
 	/* child process */
-	len = snprintf(cmd, sizeof(cmd),
-		       "export INTERFACE=\"%s\"; export DEVICE=\"%s\"; export GLOBAL=\"%s\"; "
-		       "for hook in /etc/pingcheck/%s.d/*; do [ -r \"$hook\" ] && sh $hook; done",
-		       pi->name, pi->device, get_status_str(get_global_status()), state_str);
+	len = snprintf(
+		cmd, sizeof(cmd),
+		"export INTERFACE=\"%s\"; export DEVICE=\"%s\"; export GLOBAL=\"%s\"; "
+		"for hook in /etc/pingcheck/%s.d/*; do [ -r \"$hook\" ] && sh $hook; "
+		"done",
+		pi->name, pi->device, get_status_str(get_global_status()), state_str);
 
 	if (len <= 0 || (unsigned int)len >= sizeof(cmd)) { // error or truncated
 		LOG_ERR("Run scripts commands truncated!");
@@ -66,28 +68,28 @@ static void task_scripts_run(struct runqueue *q, struct runqueue_task *t)
 }
 
 /* runqueue callback when task got cancelled */
-static void task_scripts_cancel(struct runqueue *q, struct runqueue_task *t, int type)
+static void task_scripts_cancel(struct runqueue* q, struct runqueue_task* t,
+								int type)
 {
 	struct scripts_proc* scr = container_of(t, struct scripts_proc, proc.task);
 	LOG_NOTI("'%s' scripts for '%s' cancelled",
-		 scr->state == ONLINE ? "online" : "offline", scr->intf->name);
+			 scr->state == ONLINE ? "online" : "offline", scr->intf->name);
 	runqueue_process_cancel_cb(q, t, type);
 }
 
 /* runqueue callback when task got killed */
-static void task_scripts_kill(struct runqueue *q, struct runqueue_task *t)
+static void task_scripts_kill(struct runqueue* q, struct runqueue_task* t)
 {
 	struct scripts_proc* scr = container_of(t, struct scripts_proc, proc.task);
 	LOG_NOTI("'%s' scripts for '%s' killed",
-		 scr->state == ONLINE ? "online" : "offline", scr->intf->name);
+			 scr->state == ONLINE ? "online" : "offline", scr->intf->name);
 	runqueue_process_kill_cb(q, t);
 }
 
-static const struct runqueue_task_type task_scripts_type = {
-	.run = task_scripts_run,
-	.cancel = task_scripts_cancel,
-	.kill = task_scripts_kill
-};
+static const struct runqueue_task_type task_scripts_type
+	= {.run = task_scripts_run,
+	   .cancel = task_scripts_cancel,
+	   .kill = task_scripts_kill};
 
 /* called by main to request scripts to be run */
 void scripts_run(struct ping_intf* pi, enum online_state state_new)
@@ -112,14 +114,14 @@ void scripts_run(struct ping_intf* pi, enum online_state state_new)
 	 */
 	if (scr_other->proc.task.queued && !scr_other->proc.task.running) {
 		LOG_NOTI("Cancelling obsolete '%s' scripts for '%s'",
-			 scr->state != ONLINE ? "online" : "offline", pi->name);
+				 scr->state != ONLINE ? "online" : "offline", pi->name);
 		runqueue_task_cancel(&scr_other->proc.task, 1);
 	}
 
 	/* don't queue the same scripts twice */
 	if (scr->proc.task.queued || scr->proc.task.running) {
-		LOG_NOTI("'%s' scripts for '%s' already queued or running",
-			 state_str, pi->name);
+		LOG_NOTI("'%s' scripts for '%s' already queued or running", state_str,
+				 pi->name);
 		return;
 	}
 
@@ -132,7 +134,7 @@ void scripts_run(struct ping_intf* pi, enum online_state state_new)
 	runqueue_task_add(&runq, &scr->proc.task, false);
 }
 
-static void task_panic_run(struct runqueue *q, struct runqueue_task *t)
+static void task_panic_run(struct runqueue* q, struct runqueue_task* t)
 {
 	pid_t pid = fork();
 	if (pid < 0) {
@@ -148,7 +150,8 @@ static void task_panic_run(struct runqueue *q, struct runqueue_task *t)
 	/* child process */
 	char cmd[500];
 	int len = snprintf(cmd, sizeof(cmd),
-		       "for hook in /etc/pingcheck/panic.d/*; do [ -r \"$hook\" ] && sh $hook; done");
+					   "for hook in /etc/pingcheck/panic.d/*; do [ -r "
+					   "\"$hook\" ] && sh $hook; done");
 
 	if (len <= 0 || (unsigned int)len >= sizeof(cmd)) { // error or truncated
 		LOG_ERR("Run scripts commands truncated!");

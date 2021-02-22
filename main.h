@@ -12,17 +12,24 @@
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  * GNU General Public License for more details.
  */
-#include <stdbool.h>
-#include <libubox/uloop.h>
 #include <libubox/runqueue.h>
+#include <libubox/uloop.h>
+#include <stdbool.h>
 
-#define MAX_IFNAME_LEN		256
-#define MAX_HOSTNAME_LEN	256
-#define MAX_NUM_INTERFACES	8
-#define SCRIPTS_TIMEOUT		10 /* 10 sec */
-#define UBUS_TIMEOUT		3000 /* 3 sec */
+#define MAX_IFNAME_LEN	   256
+#define MAX_HOSTNAME_LEN   256
+#define MAX_NUM_INTERFACES 8
+#define SCRIPTS_TIMEOUT	   10	/* 10 sec */
+#define UBUS_TIMEOUT	   3000 /* 3 sec */
 
-enum online_state { UNKNOWN, DOWN, UP_WITHOUT_DEFAULT_ROUTE, UP, OFFLINE, ONLINE };
+enum online_state {
+	UNKNOWN,
+	DOWN,
+	UP_WITHOUT_DEFAULT_ROUTE,
+	UP,
+	OFFLINE,
+	ONLINE
+};
 
 enum protocol { ICMP, TCP };
 
@@ -39,17 +46,17 @@ struct ping_intf {
 	enum online_state state;
 	unsigned int cnt_sent;
 	unsigned int cnt_succ;
-	unsigned int last_rtt;	/* in ms */
-	unsigned int max_rtt;	/* in ms */
+	unsigned int last_rtt; /* in ms */
+	unsigned int max_rtt;  /* in ms */
 
 	/* config items */
 	int conf_interval;
 	int conf_timeout;
 	char conf_hostname[MAX_HOSTNAME_LEN];
-	int conf_host;		/* resolved IP */
+	int conf_host; /* resolved IP */
 	enum protocol conf_proto;
 	int conf_tcp_port;
-	int conf_panic_timeout;	/* minutes */
+	int conf_panic_timeout; /* minutes */
 
 	/* internal state for ping */
 	struct uloop_fd ufd;
@@ -82,7 +89,8 @@ void ping_stop(struct ping_intf* pi);
 // ubus.c
 bool ubus_init(void);
 bool ubus_listen_network_events(void);
-int ubus_interface_get_status(const char* name, char* device, size_t device_len);
+int ubus_interface_get_status(const char* name, char* device,
+							  size_t device_len);
 bool ubus_register_server(void);
 void ubus_finish(void);
 

@@ -12,18 +12,19 @@
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  * GNU General Public License for more details.
  */
+#include "log.h"
+#include "main.h"
+#include <arpa/inet.h>
 #include <stddef.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-#include <arpa/inet.h>
 #include <uci.h>
-#include "main.h"
-#include "log.h"
 
-/** analogous to uci_lookup_option_string from uci.h, returns -1 when not found */
-static int uci_lookup_option_int(struct uci_context *uci, struct uci_section *s,
-				 const char *name)
+/** analogous to uci_lookup_option_string from uci.h, returns -1 when not found
+ */
+static int uci_lookup_option_int(struct uci_context* uci, struct uci_section* s,
+								 const char* name)
 {
 	const char* str = uci_lookup_option_string(uci, s, name);
 	return str == NULL ? -1 : atoi(str);
@@ -45,16 +46,18 @@ int uci_config_pingcheck(struct ping_intf* intf, int len)
 	int default_panic_to = -1; // don't use
 
 	uci = uci_alloc_context();
-	if (uci == NULL)
+	if (uci == NULL) {
 		return 0;
+	}
 
 	if (uci_load(uci, "pingcheck", &p)) {
 		uci_free_context(uci);
 		return 0;
 	}
 
-	uci_foreach_element(&p->sections, e) {
-		struct uci_section *s = uci_to_section(e);
+	uci_foreach_element(&p->sections, e)
+	{
+		struct uci_section* s = uci_to_section(e);
 		if (strcmp(s->type, "default") == 0) {
 			/* default values, most useful when first in file */
 			default_interval = uci_lookup_option_int(uci, s, "interval");
@@ -62,16 +65,19 @@ int uci_config_pingcheck(struct ping_intf* intf, int len)
 			default_hostname = uci_lookup_option_string(uci, s, "host");
 			default_panic_to = uci_lookup_option_int(uci, s, "panic");
 			str = uci_lookup_option_string(uci, s, "protocol");
-			if (str != NULL && strcmp(str, "tcp") == 0)
+			if (str != NULL && strcmp(str, "tcp") == 0) {
 				default_proto = TCP;
+			}
 			val = uci_lookup_option_int(uci, s, "tcp_port");
-			if (val > 0)
+			if (val > 0) {
 				default_tcp_port = val;
+			}
 		} else if (strcmp(s->type, "interface") == 0) {
 			/* interface config, needs at least name */
 			str = uci_lookup_option_string(uci, s, "name");
-			if (str == NULL)
+			if (str == NULL) {
 				continue;
+			}
 			if (strlen(str) >= MAX_IFNAME_LEN) {
 				LOG_ERR("UCI: Interface name too long");
 				continue;
@@ -91,28 +97,33 @@ int uci_config_pingcheck(struct ping_intf* intf, int len)
 			if (str != NULL)
 				strncpy(intf[idx].conf_hostname, str, MAX_HOSTNAME_LEN);
 			else if (default_hostname != NULL)
-				strncpy(intf[idx].conf_hostname, default_hostname, MAX_HOSTNAME_LEN);
+				strncpy(intf[idx].conf_hostname, default_hostname,
+						MAX_HOSTNAME_LEN);
 
 			str = uci_lookup_option_string(uci, s, "protocol");
-			if (str != NULL && strcmp(str, "tcp") == 0)
+			if (str != NULL && strcmp(str, "tcp") == 0) {
 				intf[idx].conf_proto = TCP;
-			else if (str != NULL && strcmp(str, "icmp") == 0)
+			} else if (str != NULL && strcmp(str, "icmp") == 0) {
 				intf[idx].conf_proto = ICMP;
-			else
+			} else {
 				intf[idx].conf_proto = default_proto;
+			}
 
 			val = uci_lookup_option_int(uci, s, "tcp_port");
 			intf[idx].conf_tcp_port = val > 0 ? val : default_tcp_port;
 
-			if (intf[idx].conf_interval <= 0 || intf[idx].conf_timeout <= 0 ||
-			    intf[idx].conf_hostname[0] == '\0') {
-				LOG_ERR("UCI: interface '%s' config not complete", intf[idx].name);
+			if (intf[idx].conf_interval <= 0 || intf[idx].conf_timeout <= 0
+				|| intf[idx].conf_hostname[0] == '\0') {
+				LOG_ERR("UCI: interface '%s' config not complete",
+						intf[idx].name);
 				continue;
 			} else
-				LOG_INF("Configured interface '%s' interval %d timeout %d host %s %s (%d)",
-					intf[idx].name, intf[idx].conf_interval, intf[idx].conf_timeout,
-					intf[idx].conf_hostname, intf[idx].conf_proto == TCP ? "TCP" : "ICMP",
-					intf[idx].conf_tcp_port);
+				LOG_INF("Configured interface '%s' interval %d timeout %d host "
+						"%s %s (%d)",
+						intf[idx].name, intf[idx].conf_interval,
+						intf[idx].conf_timeout, intf[idx].conf_hostname,
+						intf[idx].conf_proto == TCP ? "TCP" : "ICMP",
+						intf[idx].conf_tcp_port);
 
 			if (++idx > len) {
 				LOG_ERR("UCI: Can not handle more than %d interfaces", len);

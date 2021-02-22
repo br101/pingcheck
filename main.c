@@ -12,12 +12,12 @@
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  * GNU General Public License for more details.
  */
-#include <stdio.h>
-#include <unistd.h>
-#include <stdlib.h>
-#include <string.h>
 #include "main.h"
 #include "log.h"
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
+#include <unistd.h>
 
 /* main list of interfaces */
 static struct ping_intf intf[MAX_NUM_INTERFACES];
@@ -27,18 +27,21 @@ static struct uloop_timeout timeout_panic;
 
 void state_change(enum online_state state_new, struct ping_intf* pi)
 {
-	if (pi->state == state_new) /* no change */
+	if (pi->state == state_new) { /* no change */
 		return;
+	}
 
 	pi->state = state_new;
 
 	LOG_INF("Interface '%s' changed to %s", pi->name,
-		 get_status_str(pi->state));
+			get_status_str(pi->state));
 
 	enum online_state global_state = get_global_status();
 	if (global_state == OFFLINE) {
-		if (pi->conf_panic_timeout > 0)
-			uloop_timeout_set(&timeout_panic, pi->conf_panic_timeout * 60 * 1000);
+		if (pi->conf_panic_timeout > 0) {
+			uloop_timeout_set(&timeout_panic,
+							  pi->conf_panic_timeout * 60 * 1000);
+		}
 	} else {
 		uloop_timeout_cancel(&timeout_panic);
 	}
@@ -49,21 +52,29 @@ void state_change(enum online_state state_new, struct ping_intf* pi)
 const char* get_status_str(enum online_state state)
 {
 	switch (state) {
-		case UNKNOWN: return "UNKNOWN";
-		case DOWN: return "DOWN";
-		case UP_WITHOUT_DEFAULT_ROUTE: return "UP_WITHOUT_DEFAULT_ROUTE";
-		case UP: return "UP";
-		case OFFLINE: return "OFFLINE";
-		case ONLINE: return "ONLINE";
-		default: return "INVALID";
+	case UNKNOWN:
+		return "UNKNOWN";
+	case DOWN:
+		return "DOWN";
+	case UP_WITHOUT_DEFAULT_ROUTE:
+		return "UP_WITHOUT_DEFAULT_ROUTE";
+	case UP:
+		return "UP";
+	case OFFLINE:
+		return "OFFLINE";
+	case ONLINE:
+		return "ONLINE";
+	default:
+		return "INVALID";
 	}
 }
 
 enum online_state get_global_status(void)
 {
-	for (int i=0; i < MAX_NUM_INTERFACES && intf[i].name[0]; i++) {
-		if (intf[i].state == ONLINE)
+	for (int i = 0; i < MAX_NUM_INTERFACES && intf[i].name[0]; i++) {
+		if (intf[i].state == ONLINE) {
 			return ONLINE;
+		}
 	}
 	return OFFLINE;
 }
@@ -71,9 +82,10 @@ enum online_state get_global_status(void)
 int get_online_interface_names(const char** dest, int destLen)
 {
 	int j = 0;
-	for (int i=0; i < MAX_NUM_INTERFACES && intf[i].name[0]; i++) {
-		if (intf[i].state == ONLINE && j < destLen)
+	for (int i = 0; i < MAX_NUM_INTERFACES && intf[i].name[0]; i++) {
+		if (intf[i].state == ONLINE && j < destLen) {
 			dest[j++] = intf[i].name;
+		}
 	}
 	return j;
 }
@@ -91,8 +103,9 @@ int get_all_interface_names(const char** dest, int destLen)
 void notify_interface(const char* interface, const char* action)
 {
 	struct ping_intf* pi = get_interface(interface);
-	if (pi == NULL)
+	if (pi == NULL) {
 		return;
+	}
 
 	if (strcmp(action, "ifup") == 0) {
 		LOG_INF("Interface '%s' event UP", interface);
@@ -110,7 +123,7 @@ struct ping_intf* get_interface(const char* interface)
 {
 	struct ping_intf* pi = NULL;
 	/* find interface in our list */
-	for (int i=0; i < MAX_NUM_INTERFACES && intf[i].name[0]; i++) {
+	for (int i = 0; i < MAX_NUM_INTERFACES && intf[i].name[0]; i++) {
 		if (strncmp(intf[i].name, interface, MAX_IFNAME_LEN) == 0) {
 			pi = &intf[i];
 			break;
@@ -120,9 +133,11 @@ struct ping_intf* get_interface(const char* interface)
 }
 
 /* reset counters for all (pass NULL) or one interface */
-void reset_counters(const char* interface) {
-	for (int i=0; i < MAX_NUM_INTERFACES && intf[i].name[0]; i++) {
-		if (interface == NULL || strncmp(intf[i].name, interface, MAX_IFNAME_LEN) == 0) {
+void reset_counters(const char* interface)
+{
+	for (int i = 0; i < MAX_NUM_INTERFACES && intf[i].name[0]; i++) {
+		if (interface == NULL
+			|| strncmp(intf[i].name, interface, MAX_IFNAME_LEN) == 0) {
 			intf[i].cnt_sent = 0;
 			intf[i].cnt_succ = 0;
 			intf[i].last_rtt = 0;
@@ -132,7 +147,7 @@ void reset_counters(const char* interface) {
 }
 
 /* uloop timeout callback when offline for too long */
-static void uto_panic_cb(__attribute__((unused)) struct uloop_timeout *t)
+static void uto_panic_cb(__attribute__((unused)) struct uloop_timeout* t)
 {
 	scripts_run_panic();
 }
@@ -158,8 +173,9 @@ int main(__attribute__((unused)) int argc, __attribute__((unused)) char** argv)
 	scripts_init();
 
 	ret = ubus_init();
-	if (!ret)
+	if (!ret) {
 		goto exit;
+	}
 
 	/* listen for ubus network interface events */
 	ret = ubus_listen_network_events();
@@ -171,25 +187,27 @@ int main(__attribute__((unused)) int argc, __attribute__((unused)) char** argv)
 	ubus_register_server();
 
 	/* start ping on all available interfaces */
-	for (int i=0; i < MAX_NUM_INTERFACES && intf[i].name[0]; i++) {
+	for (int i = 0; i < MAX_NUM_INTERFACES && intf[i].name[0]; i++) {
 		ping_init(&intf[i]);
 	}
 
 	/* initialize panic handler */
 	timeout_panic.cb = uto_panic_cb;
-	if (intf[0].conf_panic_timeout > 0)
-		uloop_timeout_set(&timeout_panic, intf[0].conf_panic_timeout * 60 * 1000);
+	if (intf[0].conf_panic_timeout > 0) {
+		uloop_timeout_set(&timeout_panic,
+						  intf[0].conf_panic_timeout * 60 * 1000);
+	}
 
 	/* main loop */
 	uloop_run();
 
 	/* print statistics and cleanup */
 	printf("\n");
-	for (int i=0; i < MAX_NUM_INTERFACES && intf[i].name[0]; i++) {
+	for (int i = 0; i < MAX_NUM_INTERFACES && intf[i].name[0]; i++) {
 		printf("%s:\t%-8s %3.0f%% (%d/%d on %s)\n", intf[i].name,
-		       get_status_str(intf[i].state),
-		       (float)intf[i].cnt_succ*100/intf[i].cnt_sent,
-		       intf[i].cnt_succ, intf[i].cnt_sent, intf[i].device);
+			   get_status_str(intf[i].state),
+			   (float)intf[i].cnt_succ * 100 / intf[i].cnt_sent,
+			   intf[i].cnt_succ, intf[i].cnt_sent, intf[i].device);
 		ping_stop(&intf[i]);
 	}
 

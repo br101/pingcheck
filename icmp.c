@@ -12,30 +12,32 @@
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  * GNU General Public License for more details.
  */
+#include "main.h"
+#include <err.h>
+#include <linux/icmp.h>
+#include <linux/ip.h>
+#include <net/if.h>
+#include <netinet/in.h>
 #include <stdio.h>
-#include <unistd.h>
 #include <string.h>
 #include <sys/socket.h>
-#include <netinet/in.h>
-#include <linux/ip.h>
-#include <linux/icmp.h>
-#include <net/if.h>
-#include <err.h>
-#include "main.h"
+#include <unistd.h>
 
 static int pid = -1;
 
 /* standard 1s complement checksum */
-static unsigned short checksum(void *b, int len)
+static unsigned short checksum(void* b, int len)
 {
-	unsigned short *buf = b;
+	unsigned short* buf = b;
 	unsigned int sum = 0;
 	unsigned short result;
 
-	for (sum = 0; len > 1; len -= 2)
+	for (sum = 0; len > 1; len -= 2) {
 		sum += *buf++;
-	if (len == 1)
+	}
+	if (len == 1) {
 		sum += *(unsigned char*)buf;
+	}
 	sum = (sum >> 16) + (sum & 0xFFFF);
 	sum += (sum >> 16);
 	result = ~sum;
@@ -89,7 +91,8 @@ bool icmp_echo_send(int fd, int dst_ip, int cnt)
 	icmp->checksum = 0;
 	icmp->checksum = checksum(buf, sizeof(struct icmphdr));
 
-	ret = sendto(fd, &buf, sizeof(struct icmphdr), 0, (struct sockaddr*)&addr, sizeof(addr));
+	ret = sendto(fd, &buf, sizeof(struct icmphdr), 0, (struct sockaddr*)&addr,
+				 sizeof(addr));
 	if (ret <= 0) {
 		warn("sendto");
 		return false;
@@ -108,16 +111,16 @@ bool icmp_echo_receive(int fd)
 		return false;
 	}
 
-	struct iphdr *ip = (struct iphdr*)buf;
-	struct icmphdr *icmp = (struct icmphdr*)(buf + ip->ihl*4);
+	struct iphdr* ip = (struct iphdr*)buf;
+	struct icmphdr* icmp = (struct icmphdr*)(buf + ip->ihl * 4);
 
 	int csum_recv = icmp->checksum;
 	icmp->checksum = 0; // need to zero before calculating checksum
 	int csum_calc = checksum(icmp, sizeof(struct icmphdr));
 
-	if (csum_recv == csum_calc &&		// checksum correct
-	    icmp->type == ICMP_ECHOREPLY &&	// correct type
-	    ntohs(icmp->un.echo.id) == pid) {	// we are sender
+	if (csum_recv == csum_calc &&		  // checksum correct
+		icmp->type == ICMP_ECHOREPLY &&	  // correct type
+		ntohs(icmp->un.echo.id) == pid) { // we are sender
 		return true;
 	}
 	return false;

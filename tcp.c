@@ -12,16 +12,16 @@
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  * GNU General Public License for more details.
  */
-#include <stdio.h>
-#include <unistd.h>
-#include <string.h>
-#include <sys/socket.h>
-#include <netinet/in.h>
-#include <net/if.h>
-#include <fcntl.h>
+#include "main.h"
 #include <err.h>
 #include <errno.h>
-#include "main.h"
+#include <fcntl.h>
+#include <net/if.h>
+#include <netinet/in.h>
+#include <stdio.h>
+#include <string.h>
+#include <sys/socket.h>
+#include <unistd.h>
 
 int tcp_connect(const char* ifname, int dst, int port)
 {
@@ -39,7 +39,8 @@ int tcp_connect(const char* ifname, int dst, int port)
 		}
 		struct ifreq ifr;
 		strncpy(ifr.ifr_name, ifname, IFNAMSIZ);
-		int ret = setsockopt(fd, SOL_SOCKET, SO_BINDTODEVICE, &ifr, sizeof(ifr));
+		int ret
+			= setsockopt(fd, SOL_SOCKET, SO_BINDTODEVICE, &ifr, sizeof(ifr));
 		if (ret < 0) {
 			warn("TCP: could not bind to '%s'", ifname);
 			close(fd);
@@ -55,12 +56,12 @@ int tcp_connect(const char* ifname, int dst, int port)
 	/* connect */
 	struct sockaddr_in addr;
 	memset(&addr, 0, sizeof(addr));
-	addr.sin_family=AF_INET;
-	addr.sin_port=htons(port);
-	addr.sin_addr.s_addr=dst;
+	addr.sin_family = AF_INET;
+	addr.sin_port = htons(port);
+	addr.sin_addr.s_addr = dst;
 
 	int ret = connect(fd, (struct sockaddr*)&addr, sizeof(struct sockaddr_in));
-	if (ret == -1  && errno != EINPROGRESS) {
+	if (ret == -1 && errno != EINPROGRESS) {
 		warn("TCP: could not connect");
 		return -1;
 	}
