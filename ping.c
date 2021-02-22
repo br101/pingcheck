@@ -173,7 +173,7 @@ bool ping_init(struct ping_intf* pi)
 	return true;
 }
 
-static void ping_resolve(struct ping_intf* pi)
+static bool ping_resolve(struct ping_intf* pi)
 {
 	struct addrinfo hints;
 	struct addrinfo* addr;
@@ -184,8 +184,8 @@ static void ping_resolve(struct ping_intf* pi)
 
 	int r = getaddrinfo(pi->conf_hostname, NULL, &hints, &addr);
 	if (r < 0 || addr == NULL) {
-		LOG_ERR("Failed to resolve");
-		return;
+		LOG_ERR("Failed to resolve '%s'", pi->conf_hostname);
+		return false;
 	}
 
 	/* use only first address */
@@ -195,6 +195,7 @@ static void ping_resolve(struct ping_intf* pi)
 	pi->conf_host = sa->sin_addr.s_addr;
 
 	freeaddrinfo(addr);
+	return true;
 }
 
 /* for "ping" using TCP it's enough to just open a connection and see if the
@@ -229,7 +230,9 @@ bool ping_send(struct ping_intf* pi)
 
 	/* resolve at least every 10th time */
 	if (pi->conf_host == 0 || pi->state != ONLINE || pi->cnt_sent % 10 == 0) {
-		ping_resolve(pi);
+		if (!ping_resolve(pi)) {
+			return false;
+		}
 	}
 
 	/* either send ICMP ping or start TCP connection */
@@ -247,8 +250,9 @@ bool ping_send(struct ping_intf* pi)
 	if (ret) {
 		pi->cnt_sent++;
 		clock_gettime(CLOCK_MONOTONIC, &pi->time_sent);
-	} else
+	} else {
 		LOG_ERR("Could not send ping on '%s'", pi->name);
+	}
 	return ret;
 }
 

@@ -117,13 +117,14 @@ int uci_config_pingcheck(struct ping_intf* intf, int len)
 				LOG_ERR("UCI: interface '%s' config not complete",
 						intf[idx].name);
 				continue;
-			} else
+			} else {
 				LOG_INF("Configured interface '%s' interval %d timeout %d host "
 						"%s %s (%d)",
 						intf[idx].name, intf[idx].conf_interval,
 						intf[idx].conf_timeout, intf[idx].conf_hostname,
 						intf[idx].conf_proto == TCP ? "TCP" : "ICMP",
 						intf[idx].conf_tcp_port);
+			}
 
 			if (++idx > len) {
 				LOG_ERR("UCI: Can not handle more than %d interfaces", len);
