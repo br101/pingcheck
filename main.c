@@ -118,6 +118,19 @@ void notify_interface(const char* interface, const char* action)
 	}
 }
 
+struct ping_intf* get_interface_by_fd(int fd)
+{
+	struct ping_intf* pi = NULL;
+	/* find interface in our list */
+	for (int i = 0; i < MAX_NUM_INTERFACES && intf[i].name[0]; i++) {
+		if (intf[i].ufd.fd == fd) {
+			pi = &intf[i];
+			break;
+		}
+	}
+	return pi;
+}
+
 /* also called from ubus server_status */
 struct ping_intf* get_interface(const char* interface)
 {

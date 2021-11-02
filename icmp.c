@@ -86,7 +86,7 @@ bool icmp_echo_send(int fd, int dst_ip, int cnt)
 
 	icmp->type = ICMP_ECHO;
 	icmp->code = 0;
-	icmp->un.echo.id = htons(pid);
+	icmp->un.echo.id = htons(pid + fd);
 	icmp->un.echo.sequence = htons(cnt);
 	icmp->checksum = 0;
 	icmp->checksum = checksum(buf, sizeof(struct icmphdr));
@@ -100,7 +100,7 @@ bool icmp_echo_send(int fd, int dst_ip, int cnt)
 	return true;
 }
 
-bool icmp_echo_receive(int fd)
+int icmp_echo_receive(int fd)
 {
 	char buf[500];
 	int ret;
@@ -108,7 +108,7 @@ bool icmp_echo_receive(int fd)
 	ret = recv(fd, buf, sizeof(buf), 0);
 	if (ret < (int)(sizeof(struct icmphdr) + sizeof(struct iphdr))) {
 		warn("received packet too short");
-		return false;
+		return -1;
 	}
 
 	struct iphdr* ip = (struct iphdr*)buf;
@@ -117,11 +117,11 @@ bool icmp_echo_receive(int fd)
 	int csum_recv = icmp->checksum;
 	icmp->checksum = 0; // need to zero before calculating checksum
 	int csum_calc = checksum(icmp, sizeof(struct icmphdr));
-
+	int received_fd = ntohs(icmp->un.echo.id) - pid;
 	if (csum_recv == csum_calc &&		  // checksum correct
-		icmp->type == ICMP_ECHOREPLY &&	  // correct type
-		ntohs(icmp->un.echo.id) == pid) { // we are sender
-		return true;
+		icmp->type == ICMP_ECHOREPLY &&   // correct type
+		received_fd >= 0) {	              // handle could be valid	  
+		return received_fd;
 	}
-	return false;
+	return -1;
 }
