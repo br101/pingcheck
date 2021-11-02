@@ -75,7 +75,7 @@ long timespec_diff_ms(struct timespec start, struct timespec end);
 // icmp.c
 int icmp_init(const char* ifname);
 bool icmp_echo_send(int fd, int dst, int cnt);
-bool icmp_echo_receive(int fd);
+int icmp_echo_receive(int fd);
 
 // tcp.c
 int tcp_connect(const char* ifname, int dst, int port);
@@ -105,6 +105,7 @@ void scripts_finish(void);
 
 // main.c
 void notify_interface(const char* interface, const char* action);
+struct ping_intf* get_interface_by_fd(int fd);
 struct ping_intf* get_interface(const char* interface);
 const char* get_status_str(enum online_state state);
 enum online_state get_global_status();

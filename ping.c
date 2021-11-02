@@ -38,8 +38,19 @@ static void ping_fd_handler(struct uloop_fd* fd,
 	struct ping_intf* pi = container_of(fd, struct ping_intf, ufd);
 
 	if (pi->conf_proto == ICMP) {
-		if (!icmp_echo_receive(fd->fd)) {
+		int received_fd = icmp_echo_receive(fd->fd);
+		if (received_fd == -1) {
 			return;
+		} else {
+			if (fd->fd != received_fd) {
+				struct ping_intf* interface = get_interface_by_fd(received_fd);
+				if (interface != NULL) {
+					pi = container_of(&interface->ufd, struct ping_intf, ufd);
+				} else {
+					printf("ICMP echo received for different handle that was not found %d\n", received_fd);
+					return;
+				}
+			}
 		}
 	} else if (pi->conf_proto == TCP) {
 		/* with TCP, the handler is called when connect() succeds or fails.
