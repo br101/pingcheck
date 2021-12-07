@@ -16,6 +16,7 @@ Checks wether a configured host (normally on the Internet) can be reached via a 
 | `tcp_port`    | port number	| no		| 80	        | TCP port to connect to when protocol is `tcp` |
 | `panic`       | minutes	| no		| (not used)	| If the system is OFFLINE for more than this time, the scripts in '/etc/pingcheck/panic.d' will be called |
 | `ignore_ubus` | bool	    | no		| false         | Ignore UBUS interface status |
+| `disabled`    | bool	    | no		| false         | Don't use interface |
 
 All these values can either be defined in defaults, or in the interface, but the are required in one of them. Interface config overrides default.
 

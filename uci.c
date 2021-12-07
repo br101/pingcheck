@@ -45,6 +45,7 @@ int uci_config_pingcheck(struct ping_intf* intf, int len)
 	int default_tcp_port = 80;
 	int default_panic_to = -1; // don't use
 	bool default_ignore_ubus = false;
+	bool default_disabled = false;
 
 	uci = uci_alloc_context();
 	if (uci == NULL) {
@@ -76,6 +77,10 @@ int uci_config_pingcheck(struct ping_intf* intf, int len)
 			val = uci_lookup_option_int(uci, s, "ignore_ubus");
 			if (val > 0) {
 				default_ignore_ubus = true;
+			}
+			val = uci_lookup_option_int(uci, s, "disabled");
+			if (val > 0) {
+				default_disabled = true;
 			}
 		} else if (strcmp(s->type, "interface") == 0) {
 			/* interface config, needs at least name */
@@ -120,10 +125,16 @@ int uci_config_pingcheck(struct ping_intf* intf, int len)
 			val = uci_lookup_option_int(uci, s, "ignore_ubus");
 			intf[idx].conf_ignore_ubus = val > 0 ? true : default_ignore_ubus;
 
+			val = uci_lookup_option_int(uci, s, "disabled");
+			intf[idx].conf_disabled = val > 0 ? true : default_disabled;
+
 			if (intf[idx].conf_interval <= 0 || intf[idx].conf_timeout <= 0
 				|| intf[idx].conf_hostname[0] == '\0') {
 				LOG_ERR("UCI: interface '%s' config not complete",
 						intf[idx].name);
+				continue;
+			} else if (intf[idx].conf_disabled) {
+				LOG_NOTI("UCI: interface '%s' is disabled", intf[idx].name);
 				continue;
 			} else {
 				LOG_INF("Configured interface '%s' interval %d timeout %d host "

@@ -201,7 +201,9 @@ int main(__attribute__((unused)) int argc, __attribute__((unused)) char** argv)
 
 	/* start ping on all available interfaces */
 	for (int i = 0; i < MAX_NUM_INTERFACES && intf[i].name[0]; i++) {
-		ping_init(&intf[i]);
+		if (!intf[i].conf_disabled) {
+			ping_init(&intf[i]);
+		}
 	}
 
 	/* initialize panic handler */
@@ -217,11 +219,13 @@ int main(__attribute__((unused)) int argc, __attribute__((unused)) char** argv)
 	/* print statistics and cleanup */
 	printf("\n");
 	for (int i = 0; i < MAX_NUM_INTERFACES && intf[i].name[0]; i++) {
-		printf("%s:\t%-8s %3.0f%% (%d/%d on %s)\n", intf[i].name,
-			   get_status_str(intf[i].state),
-			   (float)intf[i].cnt_succ * 100 / intf[i].cnt_sent,
-			   intf[i].cnt_succ, intf[i].cnt_sent, intf[i].device);
-		ping_stop(&intf[i]);
+		if (!intf[i].conf_disabled) {
+			printf("%s:\t%-8s %3.0f%% (%d/%d on %s)\n", intf[i].name,
+				get_status_str(intf[i].state),
+				(float)intf[i].cnt_succ * 100 / intf[i].cnt_sent,
+				intf[i].cnt_succ, intf[i].cnt_sent, intf[i].device);
+			ping_stop(&intf[i]);
+		}
 	}
 
 exit:

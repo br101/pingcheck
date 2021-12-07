@@ -58,6 +58,7 @@ struct ping_intf {
 	int conf_tcp_port;
 	int conf_panic_timeout; /* minutes */
 	bool conf_ignore_ubus;
+	bool conf_disabled;
 
 	/* internal state for ping */
 	struct uloop_fd ufd;
