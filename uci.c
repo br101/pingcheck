@@ -44,6 +44,7 @@ int uci_config_pingcheck(struct ping_intf* intf, int len)
 	enum protocol default_proto = ICMP;
 	int default_tcp_port = 80;
 	int default_panic_to = -1; // don't use
+	bool default_ignore_ubus = false;
 
 	uci = uci_alloc_context();
 	if (uci == NULL) {
@@ -71,6 +72,10 @@ int uci_config_pingcheck(struct ping_intf* intf, int len)
 			val = uci_lookup_option_int(uci, s, "tcp_port");
 			if (val > 0) {
 				default_tcp_port = val;
+			}
+			val = uci_lookup_option_int(uci, s, "ignore_ubus");
+			if (val > 0) {
+				default_ignore_ubus = true;
 			}
 		} else if (strcmp(s->type, "interface") == 0) {
 			/* interface config, needs at least name */
@@ -112,6 +117,9 @@ int uci_config_pingcheck(struct ping_intf* intf, int len)
 			val = uci_lookup_option_int(uci, s, "tcp_port");
 			intf[idx].conf_tcp_port = val > 0 ? val : default_tcp_port;
 
+			val = uci_lookup_option_int(uci, s, "ignore_ubus");
+			intf[idx].conf_ignore_ubus = val > 0 ? true : default_ignore_ubus;
+
 			if (intf[idx].conf_interval <= 0 || intf[idx].conf_timeout <= 0
 				|| intf[idx].conf_hostname[0] == '\0') {
 				LOG_ERR("UCI: interface '%s' config not complete",
@@ -119,11 +127,11 @@ int uci_config_pingcheck(struct ping_intf* intf, int len)
 				continue;
 			} else {
 				LOG_INF("Configured interface '%s' interval %d timeout %d host "
-						"%s %s (%d)",
+						"%s %s (%d) ignore_ubus %d",
 						intf[idx].name, intf[idx].conf_interval,
 						intf[idx].conf_timeout, intf[idx].conf_hostname,
 						intf[idx].conf_proto == TCP ? "TCP" : "ICMP",
-						intf[idx].conf_tcp_port);
+						intf[idx].conf_tcp_port, intf[idx].conf_ignore_ubus);
 			}
 
 			if (++idx > len) {

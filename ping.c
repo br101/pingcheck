@@ -116,20 +116,24 @@ bool ping_init(struct ping_intf* pi)
 		return true;
 	}
 
-	ret = ubus_interface_get_status(pi->name, pi->device, MAX_IFNAME_LEN);
-	if (ret < 0) {
-		LOG_INF("Interface '%s' not found or error", pi->name);
-		pi->state = UNKNOWN;
-		return false;
-	} else if (ret == 0) {
-		LOG_INF("Interface '%s' not up", pi->name);
-		pi->state = DOWN;
-		return false;
-	} else if (ret == 1) {
-		LOG_INF("Interface '%s' (%s) has no default route but local one",
-				pi->name, pi->device);
-		pi->state = UP_WITHOUT_DEFAULT_ROUTE;
-	} else if (ret == 2) {
+	if (!pi->conf_ignore_ubus) {
+		ret = ubus_interface_get_status(pi->name, pi->device, MAX_IFNAME_LEN);
+		if (ret < 0) {
+			LOG_INF("Interface '%s' not found or error", pi->name);
+			pi->state = UNKNOWN;
+			return false;
+		} else if (ret == 0) {
+			LOG_INF("Interface '%s' not up", pi->name);
+			pi->state = DOWN;
+			return false;
+		} else if (ret == 1) {
+			LOG_INF("Interface '%s' (%s) has no default route but local one",
+					pi->name, pi->device);
+			pi->state = UP_WITHOUT_DEFAULT_ROUTE;
+		} else if (ret == 2) {
+			pi->state = UP;
+		}
+	} else {
 		pi->state = UP;
 	}
 
