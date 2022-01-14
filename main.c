@@ -93,7 +93,9 @@ int get_online_interface_names(const char** dest, int destLen)
 int get_all_interface_names(const char** dest, int destLen)
 {
 	int i = 0;
-	for (; i < MAX_NUM_INTERFACES && intf[i].name[0] && i < destLen; i++) {
+	for (; i < MAX_NUM_INTERFACES && !intf[i].conf_disabled && intf[i].name[0]
+		   && i < destLen;
+		 i++) {
 		dest[i] = intf[i].name;
 	}
 	return i;
@@ -221,9 +223,9 @@ int main(__attribute__((unused)) int argc, __attribute__((unused)) char** argv)
 	for (int i = 0; i < MAX_NUM_INTERFACES && intf[i].name[0]; i++) {
 		if (!intf[i].conf_disabled) {
 			printf("%s:\t%-8s %3.0f%% (%d/%d on %s)\n", intf[i].name,
-				get_status_str(intf[i].state),
-				(float)intf[i].cnt_succ * 100 / intf[i].cnt_sent,
-				intf[i].cnt_succ, intf[i].cnt_sent, intf[i].device);
+				   get_status_str(intf[i].state),
+				   (float)intf[i].cnt_succ * 100 / intf[i].cnt_sent,
+				   intf[i].cnt_succ, intf[i].cnt_sent, intf[i].device);
 			ping_stop(&intf[i]);
 		}
 	}
