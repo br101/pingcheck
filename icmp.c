@@ -14,10 +14,11 @@
  */
 #include "main.h"
 #include <err.h>
+/* keep libc includes before linux headers for musl compatibility */
+#include <netinet/in.h>
 #include <linux/icmp.h>
 #include <linux/ip.h>
 #include <linux/if.h>
-#include <netinet/in.h>
 #include <stdio.h>
 #include <string.h>
 #include <sys/socket.h>
