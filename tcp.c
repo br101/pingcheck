@@ -13,11 +13,14 @@
  * GNU General Public License for more details.
  */
 #include "main.h"
+
+/* keep libc includes before linux headers for musl compatibility */
+#include <netinet/in.h>
+
 #include <err.h>
 #include <errno.h>
 #include <fcntl.h>
 #include <linux/if.h>
-#include <netinet/in.h>
 #include <stdio.h>
 #include <string.h>
 #include <sys/socket.h>

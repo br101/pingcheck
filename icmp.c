@@ -13,12 +13,14 @@
  * GNU General Public License for more details.
  */
 #include "main.h"
-#include <err.h>
+
 /* keep libc includes before linux headers for musl compatibility */
 #include <netinet/in.h>
+
+#include <err.h>
 #include <linux/icmp.h>
-#include <linux/ip.h>
 #include <linux/if.h>
+#include <linux/ip.h>
 #include <stdio.h>
 #include <string.h>
 #include <sys/socket.h>
@@ -119,9 +121,9 @@ int icmp_echo_receive(int fd)
 	icmp->checksum = 0; // need to zero before calculating checksum
 	int csum_calc = checksum(icmp, sizeof(struct icmphdr));
 	int received_fd = ntohs(icmp->un.echo.id) - pid;
-	if (csum_recv == csum_calc &&		  // checksum correct
-		icmp->type == ICMP_ECHOREPLY &&   // correct type
-		received_fd >= 0) {	              // handle could be valid	  
+	if (csum_recv == csum_calc &&		// checksum correct
+		icmp->type == ICMP_ECHOREPLY && // correct type
+		received_fd >= 0) {				// handle could be valid
 		return received_fd;
 	}
 	return -1;
