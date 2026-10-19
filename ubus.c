@@ -105,7 +105,11 @@ static bool ubus_interface_status(const char* name)
 
 	ret = ubus_invoke(ctx, id, "status", NULL, ubus_result_cb, NULL,
 					  UBUS_TIMEOUT);
-	if (ret < 0) {
+	/* ubus errors are positive UBUS_STATUS_* codes, and on error (e.g.
+	 * timeout) the result callback never ran and last_result_msg is NULL */
+	if (ret != UBUS_STATUS_OK || last_result_msg == NULL) {
+		free(last_result_msg);
+		last_result_msg = NULL;
 		return false;
 	}
 
