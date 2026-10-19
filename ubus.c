@@ -59,7 +59,7 @@ bool ubus_listen_network_events(void)
 	interface_event_handler.cb = ubus_receive_interface_event;
 	int ret = ubus_register_event_handler(ctx, &interface_event_handler,
 										  "network.interface");
-	if (ret < 0) {
+	if (ret != UBUS_STATUS_OK) {
 		return false;
 	}
 
